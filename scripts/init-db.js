@@ -1,6 +1,9 @@
 // Database initialization script
 // Run with: npm run db:init
 
+// Load environment variables from .env.local
+require('dotenv').config({ path: '.env.local' })
+
 const { sql } = require('@vercel/postgres')
 const { readFileSync } = require('fs')
 const { join } = require('path')
