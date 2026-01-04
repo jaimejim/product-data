@@ -87,7 +87,6 @@ export async function analyzeProductImage({
       console.error('Claude API Error:', {
         status: error.status,
         message: error.message,
-        type: error.type,
       })
       throw new Error(`Claude API error: ${error.message}`)
     }
