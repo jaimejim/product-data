@@ -93,13 +93,22 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error in /api/analyze:', error)
 
+    // Get detailed error message
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
+
+    console.error('Detailed error:', {
+      message: errorMessage,
+      stack: errorStack,
+    })
+
     // Check for specific error types
     if (error instanceof Error) {
       if (error.message.includes('Claude API error')) {
         return NextResponse.json(
           {
             status: 'error',
-            message: 'Failed to analyze image. Please try again.',
+            message: `Claude API error: ${errorMessage}`,
             retry_after: 5,
           } as AnalysisResult,
           { status: 503 }
@@ -110,18 +119,20 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             status: 'error',
-            message: 'Failed to parse analysis results. Please try again.',
+            message: `JSON parsing error: ${errorMessage}`,
           } as AnalysisResult,
           { status: 500 }
         )
       }
     }
 
-    // Generic error response
+    // Generic error response with details in development
     return NextResponse.json(
       {
         status: 'error',
-        message: 'An unexpected error occurred. Please try again.',
+        message: process.env.NODE_ENV === 'development'
+          ? `Error: ${errorMessage}`
+          : 'An unexpected error occurred. Please try again.',
       } as AnalysisResult,
       { status: 500 }
     )
