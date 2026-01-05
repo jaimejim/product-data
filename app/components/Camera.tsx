@@ -10,6 +10,7 @@ interface CameraProps {
 export default function Camera({ onCapture, onError }: CameraProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,11 +108,27 @@ export default function Camera({ onCapture, onError }: CameraProps) {
         <div className="absolute bottom-2 right-2 w-4 h-4 border-r-2 border-b-2 border-green-300 opacity-50"></div>
       </button>
 
+      {/* Tiny upload button */}
+      <button
+        onClick={() => uploadInputRef.current?.click()}
+        className="w-full mt-2 py-2 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+      >
+        or upload from gallery
+      </button>
+
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         capture="environment"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
+
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
         onChange={handleFileUpload}
         className="hidden"
       />

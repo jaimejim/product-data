@@ -37,21 +37,10 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
       {/* Header */}
       <div className="border border-gray-800 bg-gray-950 p-6">
         <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <h2 className="text-2xl font-bold text-white">
-                {result.product_name || 'Product Analysis'}
-              </h2>
-              {shareHash && (
-                <button
-                  onClick={handleShare}
-                  className="text-green-600 hover:text-green-500 transition-colors"
-                  title="Share this analysis"
-                >
-                  {shareStatus === 'COPIED' ? '✓' : shareStatus === 'FAILED' ? '✗' : '↗'}
-                </button>
-              )}
-            </div>
+          <div className="flex-1 pr-2">
+            <h2 className="text-2xl font-bold text-white">
+              {result.product_name || 'Product Analysis'}
+            </h2>
             {result.brand && (
               <p className="text-gray-400 mt-1">{result.brand}</p>
             )}
@@ -64,11 +53,20 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
                   CACHED
                 </span>
               )}
+              {shareHash && (
+                <button
+                  onClick={handleShare}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-green-900 text-green-400 text-xs border border-green-700 hover:bg-green-800 transition-colors"
+                  title="Share this analysis"
+                >
+                  {shareStatus === 'COPIED' ? '✓ COPIED' : shareStatus === 'FAILED' ? '✗ FAILED' : '↗ SHARE'}
+                </button>
+              )}
             </div>
           </div>
           <button
             onClick={onReset}
-            className="px-4 py-2 text-sm text-gray-500 hover:text-white hover:bg-gray-900 border border-gray-800"
+            className="px-4 py-2 text-sm text-gray-500 hover:text-white hover:bg-gray-900 border border-gray-800 flex-shrink-0"
           >
             ✕
           </button>
