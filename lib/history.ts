@@ -28,11 +28,12 @@ export function addToHistory(data: AnalysisData): void {
   try {
     const history = getHistory()
 
-    // Check if product already exists in history (by ingredient text or product name)
+    // Check if product already exists in history (by product name and brand)
     const existingIndex = history.findIndex(
       (item) =>
-        item.data.raw_ingredient_text === data.raw_ingredient_text ||
-        (item.data.product_name && item.data.product_name === data.product_name)
+        item.data.product_name &&
+        item.data.product_name === data.product_name &&
+        item.data.brand === data.brand
     )
 
     const newItem: HistoryItem = {

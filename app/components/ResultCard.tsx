@@ -126,7 +126,7 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
                   <span
                     className={`text-xs px-2 py-1 border ${
                       concern.severity === 'high' ? 'border-red-700 text-red-400' :
-                      concern.severity === 'medium' ? 'border-yellow-700 text-yellow-400' :
+                      concern.severity === 'moderate' ? 'border-yellow-700 text-yellow-400' :
                       'border-gray-700 text-gray-400'
                     }`}
                   >
