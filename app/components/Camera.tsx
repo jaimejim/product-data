@@ -14,12 +14,11 @@ export default function Camera({ onCapture, onError }: CameraProps) {
   const streamRef = useRef<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Start camera stream
   const startCamera = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: { ideal: 'environment' }, // Prefer back camera
+          facingMode: { ideal: 'environment' },
           width: { ideal: 1920 },
           height: { ideal: 1080 },
         },
@@ -31,12 +30,10 @@ export default function Camera({ onCapture, onError }: CameraProps) {
         setIsCameraActive(true)
       }
     } catch (error) {
-      console.error('Error accessing camera:', error)
-      onError?.('Unable to access camera. Please use upload instead.')
+      onError?.('Camera access denied')
     }
   }, [onError])
 
-  // Stop camera stream
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop())
@@ -48,62 +45,47 @@ export default function Camera({ onCapture, onError }: CameraProps) {
     setIsCameraActive(false)
   }, [])
 
-  // Capture photo from camera
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return
 
     const video = videoRef.current
     const canvas = canvasRef.current
 
-    // Set canvas size to match video
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
 
-    // Draw video frame to canvas
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     ctx.drawImage(video, 0, 0)
 
-    // Compress and convert to base64
-    const quality = 0.85 // JPEG quality
-    const imageBase64 = canvas.toDataURL('image/jpeg', quality)
-
-    // Stop camera
+    const imageBase64 = canvas.toDataURL('image/jpeg', 0.85)
     stopCamera()
-
-    // Send to parent
     onCapture(imageBase64)
   }, [onCapture, stopCamera])
 
-  // Handle file upload
   const handleFileUpload = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0]
       if (!file) return
 
-      // Validate file type
       if (!file.type.startsWith('image/')) {
-        onError?.('Please select an image file')
+        onError?.('Invalid file type')
         return
       }
 
-      // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        onError?.('Image too large. Max 10MB')
+        onError?.('File too large')
         return
       }
 
-      // Read and compress image
       const reader = new FileReader()
       reader.onload = (e) => {
         const img = new Image()
         img.onload = () => {
-          // Compress image
           const canvas = canvasRef.current
           if (!canvas) return
 
-          // Calculate new dimensions (max 1920x1080)
           let width = img.width
           let height = img.height
           const maxWidth = 1920
@@ -135,60 +117,51 @@ export default function Camera({ onCapture, onError }: CameraProps) {
 
   return (
     <div className="w-full">
-      {/* Camera view */}
       {isCameraActive && (
-        <div className="relative mb-4 border border-gray-700 overflow-hidden bg-black">
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className="w-full h-auto"
-          />
+        <div className="relative border border-gray-800 bg-black">
+          <video ref={videoRef} autoPlay playsInline className="w-full h-auto" />
           <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
             <div className="flex gap-3 justify-center">
               <button
                 onClick={capturePhoto}
-                className="px-8 py-3 bg-green-600 text-white border border-green-500 hover:bg-green-700 transition-colors"
+                className="px-8 py-3 bg-green-600 text-white hover:bg-green-700"
               >
-                [capture]
+                CAPTURE
               </button>
               <button
                 onClick={stopCamera}
-                className="px-6 py-3 bg-gray-900 text-gray-400 border border-gray-700 hover:bg-gray-800 hover:text-white transition-colors"
+                className="px-6 py-3 bg-gray-900 text-gray-400 border border-gray-800 hover:text-white"
               >
-                [cancel]
+                CANCEL
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Camera controls */}
       {!isCameraActive && (
         <div className="space-y-3">
           <button
             onClick={startCamera}
-            className="w-full py-4 bg-gray-900 text-gray-300 border border-gray-700 hover:border-gray-600 hover:text-white transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gray-900 text-gray-300 border border-gray-800 hover:border-gray-700 hover:text-white"
           >
-            <span className="text-xl">📷</span>
-            <span>&gt; take_photo</span>
+            CAMERA
           </button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-800"></div>
+              <div className="w-full border-t border-gray-900"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-950 text-gray-600">or</span>
+              <span className="px-2 bg-black text-gray-700">or</span>
             </div>
           </div>
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full py-4 bg-gray-900 text-gray-300 border border-gray-700 hover:border-gray-600 hover:text-white transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gray-900 text-gray-300 border border-gray-800 hover:border-gray-700 hover:text-white"
           >
-            <span className="text-xl">📁</span>
-            <span>&gt; upload_file</span>
+            UPLOAD
           </button>
 
           <input
@@ -198,14 +171,9 @@ export default function Camera({ onCapture, onError }: CameraProps) {
             onChange={handleFileUpload}
             className="hidden"
           />
-
-          <div className="text-xs text-gray-600 text-center pt-2">
-            💡 For best results, ensure good lighting and clear focus
-          </div>
         </div>
       )}
 
-      {/* Hidden canvas for image processing */}
       <canvas ref={canvasRef} className="hidden" />
     </div>
   )
