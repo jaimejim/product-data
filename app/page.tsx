@@ -17,6 +17,7 @@ interface GlobalProduct {
   category: string
   overall_rating: number
   created_at: string
+  updated_at: string
   times_requested: number
 }
 
@@ -235,7 +236,7 @@ export default function Home() {
                               <div className="text-xs text-gray-500 truncate">{product.brand}</div>
                             )}
                             <div className="text-xs text-gray-600 mt-1">
-                              {formatRelativeTime(product.created_at)} • Score: {product.overall_rating}/10
+                              {formatRelativeTime(product.updated_at)} • Score: {product.overall_rating}/10
                               {product.times_requested > 1 && ` • ${product.times_requested}x`}
                             </div>
                           </div>

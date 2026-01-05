@@ -14,9 +14,10 @@ export async function GET() {
         category,
         overall_rating,
         created_at,
+        updated_at,
         times_requested
       FROM products
-      ORDER BY created_at DESC
+      ORDER BY updated_at DESC
       LIMIT 20
     `
 
