@@ -10,6 +10,16 @@ import { saveSharedResult } from '@/lib/share'
 
 type AppState = 'idle' | 'analyzing' | 'success' | 'error' | 'history'
 
+interface GlobalProduct {
+  ingredients_hash: string
+  product_name: string | null
+  brand: string | null
+  category: string
+  overall_rating: number
+  created_at: string
+  times_requested: number
+}
+
 export default function Home() {
   const router = useRouter()
   const [state, setState] = useState<AppState>('idle')
@@ -20,6 +30,8 @@ export default function Home() {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [shareHash, setShareHash] = useState<string>('')
+  const [globalProducts, setGlobalProducts] = useState<GlobalProduct[]>([])
+  const [showGlobal, setShowGlobal] = useState(false)
 
   useEffect(() => {
     if (state !== 'analyzing') return
@@ -31,6 +43,18 @@ export default function Home() {
 
   useEffect(() => {
     setHistory(getHistory())
+  }, [state])
+
+  useEffect(() => {
+    // Fetch global products on mount
+    fetch('/api/products/recent')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'success') {
+          setGlobalProducts(data.products)
+        }
+      })
+      .catch((err) => console.error('Failed to fetch global products:', err))
   }, [state])
 
   const handleCapture = async (imageBase64: string) => {
@@ -154,6 +178,51 @@ export default function Home() {
                           <div className="ml-2 text-green-600">→</div>
                         </div>
                       </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {globalProducts.length > 0 && (
+              <div className="border-t border-gray-900 pt-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-sm text-gray-500">GLOBAL FEED</h2>
+                  <button
+                    onClick={() => setShowGlobal(!showGlobal)}
+                    className="text-xs text-green-600 hover:text-green-500"
+                  >
+                    {showGlobal ? 'HIDE' : `SHOW (${globalProducts.length})`}
+                  </button>
+                </div>
+
+                {showGlobal && (
+                  <div className="space-y-2">
+                    {globalProducts.slice(0, 10).map((product) => (
+                      <div
+                        key={product.ingredients_hash}
+                        className="w-full text-left p-3 border border-gray-900 bg-gray-950/50"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-white truncate">
+                              {product.product_name || 'Unknown Product'}
+                            </div>
+                            {product.brand && (
+                              <div className="text-xs text-gray-500 truncate">{product.brand}</div>
+                            )}
+                            <div className="text-xs text-gray-600 mt-1">
+                              {new Date(product.created_at).toLocaleDateString()} • Score: {product.overall_rating}/10
+                              {product.times_requested > 1 && ` • Scanned ${product.times_requested}x`}
+                            </div>
+                          </div>
+                          <div className="ml-2">
+                            <span className="text-xs px-2 py-1 bg-gray-900 text-gray-500 border border-gray-800">
+                              {product.category}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
