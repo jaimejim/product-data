@@ -20,9 +20,14 @@ export default function SharedProductPage({ params }: { params: { hash: string }
       return
     }
 
-    const result = getSharedResult(hash)
-    setData(result)
-    setLoading(false)
+    // Fetch shared result (async)
+    getSharedResult(hash).then((result) => {
+      setData(result)
+      setLoading(false)
+    }).catch(() => {
+      setData(null)
+      setLoading(false)
+    })
   }, [params.hash])
 
   const handleBack = () => {

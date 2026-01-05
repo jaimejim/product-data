@@ -80,7 +80,7 @@ export default function Home() {
         addToHistory(data.data)
 
         // Generate shareable hash and update URL
-        const hash = saveSharedResult(data.data)
+        const hash = await saveSharedResult(data.data)
         if (hash) {
           setShareHash(hash)
           router.push(`/${hash}`, { scroll: false })
@@ -111,12 +111,12 @@ export default function Home() {
     router.push('/', { scroll: false })
   }
 
-  const handleViewHistory = (item: HistoryItem) => {
+  const handleViewHistory = async (item: HistoryItem) => {
     setResult({ status: 'cached', data: item.data, cached_at: new Date(item.timestamp).toISOString() })
     setState('success')
 
     // Generate shareable hash for history item
-    const hash = saveSharedResult(item.data)
+    const hash = await saveSharedResult(item.data)
     if (hash) {
       setShareHash(hash)
       router.push(`/${hash}`, { scroll: false })

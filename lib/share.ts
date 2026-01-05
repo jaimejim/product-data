@@ -12,40 +12,79 @@ export function generateHash(): string {
   return hash
 }
 
-export function saveSharedResult(data: AnalysisData): string {
+export async function saveSharedResult(data: AnalysisData, productId?: number): Promise<string> {
   if (typeof window === 'undefined') return ''
 
   try {
-    // Generate a unique hash
-    let hash = generateHash()
-    let attempts = 0
+    // Save to database via API
+    const response = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ analysisData: data, productId }),
+    })
 
-    // Ensure uniqueness (max 10 attempts)
-    while (localStorage.getItem(SHARE_KEY_PREFIX + hash) && attempts < 10) {
-      hash = generateHash()
-      attempts++
+    if (response.ok) {
+      const result = await response.json()
+      if (result.status === 'success' && result.hash) {
+        // Also save to localStorage as backup
+        const shareData = {
+          hash: result.hash,
+          timestamp: Date.now(),
+          data,
+        }
+        localStorage.setItem(SHARE_KEY_PREFIX + result.hash, JSON.stringify(shareData))
+
+        return result.hash
+      }
     }
 
-    // Save to localStorage
+    // Fallback to localStorage only if API fails
+    console.warn('API save failed, using localStorage fallback')
+    const hash = generateHash()
     const shareData = {
       hash,
       timestamp: Date.now(),
       data,
     }
-
     localStorage.setItem(SHARE_KEY_PREFIX + hash, JSON.stringify(shareData))
-
     return hash
   } catch (error) {
     console.error('Failed to save shared result:', error)
-    return ''
+    // Fallback to localStorage
+    const hash = generateHash()
+    const shareData = {
+      hash,
+      timestamp: Date.now(),
+      data,
+    }
+    localStorage.setItem(SHARE_KEY_PREFIX + hash, JSON.stringify(shareData))
+    return hash
   }
 }
 
-export function getSharedResult(hash: string): AnalysisData | null {
+export async function getSharedResult(hash: string): Promise<AnalysisData | null> {
   if (typeof window === 'undefined') return null
 
   try {
+    // Try database first
+    const response = await fetch(`/api/share/${hash}`)
+
+    if (response.ok) {
+      const result = await response.json()
+      if (result.status === 'success' && result.data) {
+        // Cache in localStorage for offline access
+        const shareData = {
+          hash,
+          timestamp: Date.now(),
+          data: result.data,
+        }
+        localStorage.setItem(SHARE_KEY_PREFIX + hash, JSON.stringify(shareData))
+
+        return result.data
+      }
+    }
+
+    // Fallback to localStorage
     const stored = localStorage.getItem(SHARE_KEY_PREFIX + hash)
     if (!stored) return null
 
@@ -53,7 +92,17 @@ export function getSharedResult(hash: string): AnalysisData | null {
     return shareData.data
   } catch (error) {
     console.error('Failed to load shared result:', error)
-    return null
+
+    // Try localStorage fallback
+    try {
+      const stored = localStorage.getItem(SHARE_KEY_PREFIX + hash)
+      if (!stored) return null
+
+      const shareData = JSON.parse(stored)
+      return shareData.data
+    } catch (fallbackError) {
+      return null
+    }
   }
 }
 

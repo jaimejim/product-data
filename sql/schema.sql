@@ -68,3 +68,31 @@ COMMENT ON COLUMN products.ingredients IS 'Structured array of ingredient object
 COMMENT ON COLUMN products.concerns IS 'Array of health/toxicity concerns identified';
 COMMENT ON COLUMN products.confidence_score IS 'Claude API confidence in analysis (0.00-1.00)';
 COMMENT ON COLUMN products.times_requested IS 'Number of times this product was analyzed (cache hits + 1)';
+
+-- Shared links table for permanent permalinks
+CREATE TABLE IF NOT EXISTS shared_links (
+    share_hash TEXT PRIMARY KEY,  -- 5-character alphanumeric hash
+
+    -- Full analysis data
+    analysis_data JSONB NOT NULL,  -- Complete AnalysisData object
+
+    -- Link to products table (optional)
+    product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+
+    -- Analytics
+    view_count INTEGER DEFAULT 0,
+
+    -- Timestamps
+    created_at TIMESTAMP DEFAULT NOW(),
+    last_viewed_at TIMESTAMP
+);
+
+-- Indexes for shared links
+CREATE INDEX IF NOT EXISTS idx_shared_product_id ON shared_links(product_id);
+CREATE INDEX IF NOT EXISTS idx_shared_created_at ON shared_links(created_at DESC);
+
+-- Comments for documentation
+COMMENT ON TABLE shared_links IS 'Permanent shareable links to product analyses';
+COMMENT ON COLUMN shared_links.share_hash IS '5-character alphanumeric hash used in URL';
+COMMENT ON COLUMN shared_links.analysis_data IS 'Complete product analysis data for permalink';
+COMMENT ON COLUMN shared_links.view_count IS 'Number of times this shared link was accessed';
