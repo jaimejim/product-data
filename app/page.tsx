@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Camera from './components/Camera'
 import ResultCard from './components/ResultCard'
 import type { AnalysisResult } from '@/lib/types'
+import { getHistory, addToHistory, type HistoryItem } from '@/lib/history'
 
-type AppState = 'idle' | 'analyzing' | 'success' | 'error'
+type AppState = 'idle' | 'analyzing' | 'success' | 'error' | 'history'
 
 export default function Home() {
   const [state, setState] = useState<AppState>('idle')
@@ -13,6 +14,8 @@ export default function Home() {
   const [error, setError] = useState<string>('')
   const [startTime, setStartTime] = useState<number>(0)
   const [elapsed, setElapsed] = useState<number>(0)
+  const [history, setHistory] = useState<HistoryItem[]>([])
+  const [showHistory, setShowHistory] = useState(false)
 
   useEffect(() => {
     if (state !== 'analyzing') return
@@ -21,6 +24,10 @@ export default function Home() {
     }, 100)
     return () => clearInterval(interval)
   }, [state, startTime])
+
+  useEffect(() => {
+    setHistory(getHistory())
+  }, [state])
 
   const handleCapture = async (imageBase64: string) => {
     setState('analyzing')
@@ -42,6 +49,7 @@ export default function Home() {
       if (data.status === 'success' || data.status === 'cached') {
         setResult(data)
         setState('success')
+        addToHistory(data.data)
       } else if (data.status === 'poor_quality') {
         setError(data.message + '\n\n' + data.suggestion)
         setState('error')
@@ -63,6 +71,12 @@ export default function Home() {
     setResult(null)
     setError('')
     setElapsed(0)
+    setShowHistory(false)
+  }
+
+  const handleViewHistory = (item: HistoryItem) => {
+    setResult({ status: 'cached', data: item.data, cached_at: new Date(item.timestamp).toISOString() })
+    setState('success')
   }
 
   return (
@@ -76,7 +90,7 @@ export default function Home() {
                 ANALYZER
               </h1>
               <p className="text-gray-500 text-sm">
-                scan ingredients
+                scan product ingredients to check health safety and toxicity ratings
               </p>
             </div>
 
@@ -85,6 +99,44 @@ export default function Home() {
             {error && (
               <div className="border border-red-900 bg-red-950/30 p-4 text-red-300 text-sm">
                 {error}
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <div className="border-t border-gray-900 pt-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-sm text-gray-500">RECENT SCANS</h2>
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="text-xs text-green-600 hover:text-green-500"
+                  >
+                    {showHistory ? 'HIDE' : `SHOW (${history.length})`}
+                  </button>
+                </div>
+
+                {showHistory && (
+                  <div className="space-y-2">
+                    {history.slice(0, 10).map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => handleViewHistory(item)}
+                        className="w-full text-left p-3 border border-gray-900 hover:border-gray-700 hover:bg-gray-950 transition-colors"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm text-white truncate">
+                              {item.data.product_name || 'Unknown Product'}
+                            </div>
+                            <div className="text-xs text-gray-600 mt-1">
+                              {new Date(item.timestamp).toLocaleDateString()} • Score: {item.data.overall_rating}/10
+                            </div>
+                          </div>
+                          <div className="ml-2 text-green-600">→</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
