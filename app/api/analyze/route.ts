@@ -1,15 +1,23 @@
-// POST /api/analyze - Main product analysis endpoint
+// POST /api/analyze - Main product analysis endpoint with improved caching
 
 import { NextRequest, NextResponse } from 'next/server'
 import { analyzeProductImage, optimizeImageForAnalysis } from '@/lib/claude'
 import { hashIngredients } from '@/lib/hash'
 import { getProductByHash, storeProductAnalysis, productToAnalysisData } from '@/lib/db'
 import type { AnalysisResult, AnalyzeRequest } from '@/lib/types'
+import crypto from 'crypto'
 
 export const runtime = 'nodejs'
-export const maxDuration = 30 // 30 seconds max (for Claude API call)
+export const maxDuration = 60 // 60 seconds max for complex analyses
+
+// Helper to hash image for quick cache lookup
+function hashImage(imageData: string): string {
+  return crypto.createHash('sha256').update(imageData).digest('hex').substring(0, 16)
+}
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
     // Parse request body
     const body: AnalyzeRequest = await request.json()
@@ -27,12 +35,16 @@ export async function POST(request: NextRequest) {
     // Optimize image
     const { data: imageBase64, mediaType } = optimizeImageForAnalysis(body.image)
 
+    console.log('🔍 Starting analysis...')
+
     // Call Claude Vision API
-    console.log('Analyzing image with Claude Vision API...')
     const analysis = await analyzeProductImage({
       imageBase64,
       mediaType,
     })
+
+    console.log('✅ Claude analysis complete')
+    console.log('📝 Extracted ingredients:', analysis.raw_ingredient_text.substring(0, 100))
 
     // Check photo quality
     if (analysis.photo_quality === 'poor') {
@@ -54,13 +66,15 @@ export async function POST(request: NextRequest) {
 
     // Generate hash from ingredient text
     const ingredientsHash = await hashIngredients(analysis.raw_ingredient_text)
+    console.log('🔑 Ingredient hash:', ingredientsHash)
 
     // Check cache
-    console.log('Checking cache for hash:', ingredientsHash)
     const cachedProduct = await getProductByHash(ingredientsHash)
 
     if (cachedProduct) {
-      console.log('Cache hit! Returning cached analysis')
+      const elapsed = Date.now() - startTime
+      console.log(`⚡ Cache HIT! Returned in ${elapsed}ms`)
+
       return NextResponse.json({
         status: 'cached',
         data: productToAnalysisData(cachedProduct),
@@ -69,8 +83,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Store new analysis
-    console.log('Cache miss. Storing new analysis...')
-    const storedProduct = await storeProductAnalysis(ingredientsHash, analysis)
+    console.log('💾 Cache MISS - storing new analysis')
+    await storeProductAnalysis(ingredientsHash, analysis)
+
+    const elapsed = Date.now() - startTime
+    console.log(`✨ Analysis complete in ${elapsed}ms`)
 
     // Return success response
     return NextResponse.json({
@@ -91,7 +108,7 @@ export async function POST(request: NextRequest) {
     } as AnalysisResult)
 
   } catch (error) {
-    console.error('Error in /api/analyze:', error)
+    console.error('❌ Error in /api/analyze:', error)
 
     // Get detailed error message
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -104,11 +121,11 @@ export async function POST(request: NextRequest) {
 
     // Check for specific error types
     if (error instanceof Error) {
-      if (error.message.includes('Claude API error')) {
+      if (error.message.includes('Claude API error') || error.message.includes('404')) {
         return NextResponse.json(
           {
             status: 'error',
-            message: `Claude API error: ${errorMessage}`,
+            message: `Failed to analyze: ${errorMessage}`,
             retry_after: 5,
           } as AnalysisResult,
           { status: 503 }
@@ -119,20 +136,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             status: 'error',
-            message: `JSON parsing error: ${errorMessage}`,
+            message: `Could not understand response. The image might be unclear or not show ingredients.`,
           } as AnalysisResult,
           { status: 500 }
         )
       }
     }
 
-    // Generic error response with details in development
+    // Generic error response with details
     return NextResponse.json(
       {
         status: 'error',
-        message: process.env.NODE_ENV === 'development'
-          ? `Error: ${errorMessage}`
-          : 'An unexpected error occurred. Please try again.',
+        message: `Analysis failed: ${errorMessage}. Please try a clearer photo of the ingredient list.`,
       } as AnalysisResult,
       { status: 500 }
     )
@@ -144,6 +159,7 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     service: 'Product Health Analyzer API',
-    version: '1.0.0',
+    version: '2.0.0',
+    model: 'claude-sonnet-4-5',
   })
 }

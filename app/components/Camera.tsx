@@ -8,7 +8,6 @@ interface CameraProps {
 }
 
 export default function Camera({ onCapture, onError }: CameraProps) {
-  const [hasCamera, setHasCamera] = useState(false)
   const [isCameraActive, setIsCameraActive] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -20,7 +19,7 @@ export default function Camera({ onCapture, onError }: CameraProps) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment', // Use back camera on mobile
+          facingMode: { ideal: 'environment' }, // Prefer back camera
           width: { ideal: 1920 },
           height: { ideal: 1080 },
         },
@@ -30,12 +29,10 @@ export default function Camera({ onCapture, onError }: CameraProps) {
         videoRef.current.srcObject = stream
         streamRef.current = stream
         setIsCameraActive(true)
-        setHasCamera(true)
       }
     } catch (error) {
       console.error('Error accessing camera:', error)
-      setHasCamera(false)
-      onError?.('Unable to access camera. Please grant camera permissions or upload a photo.')
+      onError?.('Unable to access camera. Please use upload instead.')
     }
   }, [onError])
 
@@ -69,7 +66,7 @@ export default function Camera({ onCapture, onError }: CameraProps) {
     ctx.drawImage(video, 0, 0)
 
     // Compress and convert to base64
-    const quality = 0.8 // JPEG quality (0-1)
+    const quality = 0.85 // JPEG quality
     const imageBase64 = canvas.toDataURL('image/jpeg', quality)
 
     // Stop camera
@@ -93,7 +90,7 @@ export default function Camera({ onCapture, onError }: CameraProps) {
 
       // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        onError?.('Image is too large. Please select a file smaller than 10MB')
+        onError?.('Image too large. Max 10MB')
         return
       }
 
@@ -126,7 +123,7 @@ export default function Camera({ onCapture, onError }: CameraProps) {
 
           ctx.drawImage(img, 0, 0, width, height)
 
-          const imageBase64 = canvas.toDataURL('image/jpeg', 0.8)
+          const imageBase64 = canvas.toDataURL('image/jpeg', 0.85)
           onCapture(imageBase64)
         }
         img.src = e.target?.result as string
@@ -137,29 +134,29 @@ export default function Camera({ onCapture, onError }: CameraProps) {
   )
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full">
       {/* Camera view */}
       {isCameraActive && (
-        <div className="relative mb-4 rounded-lg overflow-hidden bg-black">
+        <div className="relative mb-4 border border-gray-700 overflow-hidden bg-black">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             className="w-full h-auto"
           />
-          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
             <div className="flex gap-3 justify-center">
               <button
                 onClick={capturePhoto}
-                className="px-8 py-3 bg-white text-black rounded-full font-semibold hover:bg-gray-100 transition-colors"
+                className="px-8 py-3 bg-green-600 text-white border border-green-500 hover:bg-green-700 transition-colors"
               >
-                📸 Capture
+                [capture]
               </button>
               <button
                 onClick={stopCamera}
-                className="px-6 py-3 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition-colors"
+                className="px-6 py-3 bg-gray-900 text-gray-400 border border-gray-700 hover:bg-gray-800 hover:text-white transition-colors"
               >
-                Cancel
+                [cancel]
               </button>
             </div>
           </div>
@@ -171,27 +168,27 @@ export default function Camera({ onCapture, onError }: CameraProps) {
         <div className="space-y-3">
           <button
             onClick={startCamera}
-            className="w-full py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gray-900 text-gray-300 border border-gray-700 hover:border-gray-600 hover:text-white transition-colors flex items-center justify-center gap-2"
           >
-            <span className="text-2xl">📷</span>
-            Take Photo
+            <span className="text-xl">📷</span>
+            <span>&gt; take_photo</span>
           </button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-800"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">or</span>
+              <span className="px-2 bg-gray-950 text-gray-600">or</span>
             </div>
           </div>
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full py-4 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-4 bg-gray-900 text-gray-300 border border-gray-700 hover:border-gray-600 hover:text-white transition-colors flex items-center justify-center gap-2"
           >
-            <span className="text-2xl">🖼️</span>
-            Upload Photo
+            <span className="text-xl">📁</span>
+            <span>&gt; upload_file</span>
           </button>
 
           <input
@@ -201,6 +198,10 @@ export default function Camera({ onCapture, onError }: CameraProps) {
             onChange={handleFileUpload}
             className="hidden"
           />
+
+          <div className="text-xs text-gray-600 text-center pt-2">
+            💡 For best results, ensure good lighting and clear focus
+          </div>
         </div>
       )}
 
