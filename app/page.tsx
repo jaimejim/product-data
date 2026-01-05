@@ -1,14 +1,17 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Camera from './components/Camera'
 import ResultCard from './components/ResultCard'
 import type { AnalysisResult } from '@/lib/types'
 import { getHistory, addToHistory, type HistoryItem } from '@/lib/history'
+import { saveSharedResult } from '@/lib/share'
 
 type AppState = 'idle' | 'analyzing' | 'success' | 'error' | 'history'
 
 export default function Home() {
+  const router = useRouter()
   const [state, setState] = useState<AppState>('idle')
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string>('')
@@ -16,6 +19,7 @@ export default function Home() {
   const [elapsed, setElapsed] = useState<number>(0)
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [showHistory, setShowHistory] = useState(false)
+  const [shareHash, setShareHash] = useState<string>('')
 
   useEffect(() => {
     if (state !== 'analyzing') return
@@ -50,6 +54,13 @@ export default function Home() {
         setResult(data)
         setState('success')
         addToHistory(data.data)
+
+        // Generate shareable hash and update URL
+        const hash = saveSharedResult(data.data)
+        if (hash) {
+          setShareHash(hash)
+          router.push(`/${hash}`, { scroll: false })
+        }
       } else if (data.status === 'poor_quality') {
         setError(data.message + '\n\n' + data.suggestion)
         setState('error')
@@ -72,11 +83,20 @@ export default function Home() {
     setError('')
     setElapsed(0)
     setShowHistory(false)
+    setShareHash('')
+    router.push('/', { scroll: false })
   }
 
   const handleViewHistory = (item: HistoryItem) => {
     setResult({ status: 'cached', data: item.data, cached_at: new Date(item.timestamp).toISOString() })
     setState('success')
+
+    // Generate shareable hash for history item
+    const hash = saveSharedResult(item.data)
+    if (hash) {
+      setShareHash(hash)
+      router.push(`/${hash}`, { scroll: false })
+    }
   }
 
   return (
@@ -167,6 +187,7 @@ export default function Home() {
             result={result.data}
             isCached={result.status === 'cached'}
             onReset={handleReset}
+            shareHash={shareHash}
           />
         )}
 
