@@ -57,15 +57,31 @@ export async function POST() {
         EXECUTE FUNCTION update_updated_at_column()
     `
 
-    // Verify table was created
+    // Create shared_links table
+    await sql`
+      CREATE TABLE IF NOT EXISTS shared_links (
+        share_hash TEXT PRIMARY KEY,
+        analysis_data JSONB NOT NULL,
+        product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+        view_count INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        last_viewed_at TIMESTAMP
+      )
+    `
+
+    // Create indexes for shared_links
+    await sql`CREATE INDEX IF NOT EXISTS idx_shared_product_id ON shared_links(product_id)`
+    await sql`CREATE INDEX IF NOT EXISTS idx_shared_created_at ON shared_links(created_at DESC)`
+
+    // Verify tables were created
     const result = await sql`
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-      AND table_name = 'products'
+      AND table_name IN ('products', 'shared_links')
     `
 
-    if (result.rows.length === 0) {
+    if (result.rows.length < 2) {
       return NextResponse.json({
         success: false,
         error: 'Table creation verification failed',
@@ -75,8 +91,8 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       message: 'Database initialized successfully',
-      tables: ['products'],
-      indexes: ['idx_ingredients_hash', 'idx_category', 'idx_overall_rating', 'idx_created_at'],
+      tables: ['products', 'shared_links'],
+      indexes: ['idx_ingredients_hash', 'idx_category', 'idx_overall_rating', 'idx_created_at', 'idx_shared_product_id', 'idx_shared_created_at'],
     })
 
   } catch (error) {
