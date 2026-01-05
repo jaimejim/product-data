@@ -46,16 +46,39 @@ export default function Home() {
   }, [state])
 
   useEffect(() => {
-    // Fetch global products on mount
-    fetch('/api/products/recent')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === 'success') {
-          setGlobalProducts(data.products)
-        }
-      })
-      .catch((err) => console.error('Failed to fetch global products:', err))
+    // Fetch global products on mount and refresh periodically
+    const fetchGlobal = () => {
+      fetch('/api/products/recent')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === 'success') {
+            setGlobalProducts(data.products)
+          }
+        })
+        .catch((err) => console.error('Failed to fetch global products:', err))
+    }
+
+    fetchGlobal()
+
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(fetchGlobal, 10000)
+    return () => clearInterval(interval)
   }, [state])
+
+  // Function to format relative time
+  const formatRelativeTime = (dateString: string): string => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (seconds < 60) return `${seconds}s ago`
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `${days}d ago`
+  }
 
   const handleCapture = async (imageBase64: string) => {
     setState('analyzing')
@@ -187,7 +210,7 @@ export default function Home() {
             {globalProducts.length > 0 && (
               <div className="border-t border-gray-900 pt-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-sm text-gray-500">GLOBAL FEED</h2>
+                  <h2 className="text-sm text-gray-500">LATEST 20 PRODUCTS</h2>
                   <button
                     onClick={() => setShowGlobal(!showGlobal)}
                     className="text-xs text-green-600 hover:text-green-500"
@@ -212,8 +235,8 @@ export default function Home() {
                               <div className="text-xs text-gray-500 truncate">{product.brand}</div>
                             )}
                             <div className="text-xs text-gray-600 mt-1">
-                              {new Date(product.created_at).toLocaleDateString()} • Score: {product.overall_rating}/10
-                              {product.times_requested > 1 && ` • Scanned ${product.times_requested}x`}
+                              {formatRelativeTime(product.created_at)} • Score: {product.overall_rating}/10
+                              {product.times_requested > 1 && ` • ${product.times_requested}x`}
                             </div>
                           </div>
                           <div className="ml-2">
