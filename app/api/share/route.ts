@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
       productId?: number
     }
 
+    console.log(`🔗 Creating share link for: ${analysisData.product_name} (provided ID: ${productId || 'none'})`)
+
     if (!analysisData) {
       return NextResponse.json({ status: 'error', message: 'Missing analysis data' }, { status: 400 })
     }
@@ -31,13 +33,25 @@ export async function POST(request: NextRequest) {
     let finalProductId = productId
     if (!finalProductId && analysisData.product_name) {
       try {
-        const productLookup = await sql`
-          SELECT id FROM products
-          WHERE product_name = ${analysisData.product_name}
-          AND (brand = ${analysisData.brand || null} OR brand IS NULL)
-          ORDER BY updated_at DESC
-          LIMIT 1
-        `
+        // Match by product name and brand (handling null brands correctly)
+        let productLookup
+        if (analysisData.brand) {
+          productLookup = await sql`
+            SELECT id FROM products
+            WHERE product_name = ${analysisData.product_name}
+            AND brand = ${analysisData.brand}
+            ORDER BY updated_at DESC
+            LIMIT 1
+          `
+        } else {
+          productLookup = await sql`
+            SELECT id FROM products
+            WHERE product_name = ${analysisData.product_name}
+            AND brand IS NULL
+            ORDER BY updated_at DESC
+            LIMIT 1
+          `
+        }
 
         if (productLookup.rows.length > 0) {
           finalProductId = productLookup.rows[0].id
@@ -80,6 +94,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       )
     }
+
+    console.log(`✅ Share link created: ${hash} (product_id: ${finalProductId || 'null'})`)
 
     return NextResponse.json({
       status: 'success',
