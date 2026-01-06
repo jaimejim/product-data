@@ -15,6 +15,8 @@ export function generateHash(): string {
 export async function saveSharedResult(data: AnalysisData, productId?: number): Promise<string> {
   if (typeof window === 'undefined') return ''
 
+  console.log(`📤 saveSharedResult called with productId: ${productId}, product: ${data.product_name}`)
+
   try {
     // Save to database via API
     const response = await fetch('/api/share', {
@@ -23,8 +25,11 @@ export async function saveSharedResult(data: AnalysisData, productId?: number): 
       body: JSON.stringify({ analysisData: data, productId }),
     })
 
+    console.log(`📥 Share API responded with status: ${response.status}`)
+
     if (response.ok) {
       const result = await response.json()
+      console.log(`✅ Share API result:`, result)
       if (result.status === 'success' && result.hash) {
         // Also save to localStorage as backup
         const shareData = {
@@ -34,6 +39,7 @@ export async function saveSharedResult(data: AnalysisData, productId?: number): 
         }
         localStorage.setItem(SHARE_KEY_PREFIX + result.hash, JSON.stringify(shareData))
 
+        console.log(`✅ Share saved successfully: ${result.hash}`)
         return result.hash
       }
     }

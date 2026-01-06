@@ -101,6 +101,7 @@ export default function Home() {
       const data: AnalysisResult = await response.json()
 
       if (data.status === 'success' || data.status === 'cached') {
+        console.log(`📊 Analysis complete for ${data.data.product_name}, product_id: ${data.product_id}`)
         setResult(data)
         setState('success')
         addToHistory(data.data)
