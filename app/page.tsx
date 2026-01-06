@@ -19,6 +19,7 @@ interface GlobalProduct {
   created_at: string
   updated_at: string
   times_requested: number
+  share_hash: string | null
 }
 
 export default function Home() {
@@ -147,18 +148,9 @@ export default function Home() {
     }
   }
 
-  const handleViewGlobalProduct = async (product: GlobalProduct) => {
-    // Fetch or create share link for this product
-    try {
-      const response = await fetch(`/api/product/${product.ingredients_hash}/share`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.status === 'success' && data.hash) {
-          router.push(`/${data.hash}`)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load product:', error)
+  const handleViewGlobalProduct = (product: GlobalProduct) => {
+    if (product.share_hash) {
+      router.push(`/${product.share_hash}`)
     }
   }
 
@@ -170,7 +162,7 @@ export default function Home() {
           <div className="space-y-8">
             <div className="text-center py-8">
               <h1 className="text-3xl font-bold text-green-400 mb-2">
-                ANALYZER
+                mira
               </h1>
               <p className="text-gray-500 text-sm">
                 scan product ingredients to check health safety and toxicity ratings

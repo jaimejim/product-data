@@ -1,6 +1,6 @@
 {
-  "name": "Product Analyzer",
-  "short_name": "Analyzer",
+  "name": "mira",
+  "short_name": "mira",
   "description": "Scan and analyze product ingredients instantly",
   "start_url": "/",
   "display": "standalone",

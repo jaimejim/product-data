@@ -3,7 +3,7 @@ import './globals.css'
 import ServiceWorkerRegistration from './components/ServiceWorkerRegistration'
 
 export const metadata: Metadata = {
-  title: 'Analyzer',
+  title: 'mira',
   description: 'Scan product ingredients to check health safety and toxicity ratings',
   manifest: '/manifest.json',
   themeColor: '#000000',
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Analyzer',
+    title: 'mira',
   },
 }
 

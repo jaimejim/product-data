@@ -8,16 +8,18 @@ export async function GET() {
   try {
     const result = await sql`
       SELECT
-        ingredients_hash,
-        product_name,
-        brand,
-        category,
-        overall_rating,
-        created_at,
-        updated_at,
-        times_requested
-      FROM products
-      ORDER BY updated_at DESC
+        p.ingredients_hash,
+        p.product_name,
+        p.brand,
+        p.category,
+        p.overall_rating,
+        p.created_at,
+        p.updated_at,
+        p.times_requested,
+        sl.share_hash
+      FROM products p
+      LEFT JOIN shared_links sl ON sl.product_id = p.id
+      ORDER BY p.updated_at DESC
       LIMIT 20
     `
 
