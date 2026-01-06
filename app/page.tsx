@@ -148,9 +148,24 @@ export default function Home() {
     }
   }
 
-  const handleViewGlobalProduct = (product: GlobalProduct) => {
+  const handleViewGlobalProduct = async (product: GlobalProduct) => {
+    // If share link exists, navigate directly
     if (product.share_hash) {
       router.push(`/${product.share_hash}`)
+      return
+    }
+
+    // Otherwise, get/create share link from product data
+    try {
+      const response = await fetch(`/api/product/${product.ingredients_hash}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status === 'success' && data.share_hash) {
+          router.push(`/${data.share_hash}`)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load product:', error)
     }
   }
 
