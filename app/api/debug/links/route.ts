@@ -9,25 +9,30 @@ export async function GET() {
     const stats = await sql`
       SELECT
         COUNT(DISTINCT p.id) as total_products,
-        COUNT(DISTINCT sl.share_hash) as products_with_links,
-        COUNT(DISTINCT p.id) - COUNT(DISTINCT sl.share_hash) as products_without_links
+        COUNT(DISTINCT CASE WHEN sl.share_hash IS NOT NULL THEN p.id END) as products_with_links,
+        COUNT(DISTINCT CASE WHEN sl.share_hash IS NULL THEN p.id END) as products_without_links
       FROM products p
       LEFT JOIN shared_links sl ON sl.product_id = p.id
     `
 
-    // Get recent products with their share link status
+    // Get recent products with their share link status (one row per product)
     const recent = await sql`
       SELECT
         p.id,
         p.product_name,
         p.brand,
         p.updated_at,
-        sl.share_hash,
-        sl.product_id as linked_product_id
+        (
+          SELECT share_hash
+          FROM shared_links
+          WHERE product_id = p.id
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) as share_hash,
+        p.id as linked_product_id
       FROM products p
-      LEFT JOIN shared_links sl ON sl.product_id = p.id
       ORDER BY p.updated_at DESC
-      LIMIT 10
+      LIMIT 20
     `
 
     // Get share links without product_id
