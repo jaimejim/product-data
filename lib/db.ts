@@ -43,6 +43,8 @@ export async function storeProductAnalysis(
   analysis: ClaudeAnalysisResponse
 ): Promise<Product> {
   try {
+    console.log(`💾 Storing product: ${analysis.product_name || 'Unknown'} (hash: ${ingredientsHash})`)
+
     const result = await sql<Product>`
       INSERT INTO products (
         ingredients_hash,
@@ -83,9 +85,17 @@ export async function storeProductAnalysis(
       RETURNING *
     `
 
-    return result.rows[0]
+    const product = result.rows[0]
+    console.log(`✓ Product stored with ID: ${product.id}`)
+
+    return product
   } catch (error) {
-    console.error('Database error in storeProductAnalysis:', error)
+    console.error('❌ Database error in storeProductAnalysis:', error)
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
     throw new Error('Failed to store product analysis')
   }
 }
