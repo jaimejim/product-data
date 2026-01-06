@@ -79,12 +79,13 @@ export async function POST(request: NextRequest) {
         status: 'cached',
         data: productToAnalysisData(cachedProduct),
         cached_at: cachedProduct.created_at.toISOString(),
+        product_id: cachedProduct.id,
       } as AnalysisResult)
     }
 
     // Store new analysis
     console.log('💾 Cache MISS - storing new analysis')
-    await storeProductAnalysis(ingredientsHash, analysis)
+    const product = await storeProductAnalysis(ingredientsHash, analysis)
 
     const elapsed = Date.now() - startTime
     console.log(`✨ Analysis complete in ${elapsed}ms`)
@@ -105,6 +106,7 @@ export async function POST(request: NextRequest) {
         confidence_score: analysis.confidence_score,
         summary: analysis.summary,
       },
+      product_id: product.id,
     } as AnalysisResult)
 
   } catch (error) {

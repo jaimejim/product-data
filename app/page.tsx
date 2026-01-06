@@ -105,8 +105,8 @@ export default function Home() {
         setState('success')
         addToHistory(data.data)
 
-        // Generate shareable hash and update URL
-        const hash = await saveSharedResult(data.data)
+        // Generate shareable hash and update URL with product ID for proper linking
+        const hash = await saveSharedResult(data.data, data.product_id)
         if (hash) {
           setShareHash(hash)
           router.push(`/${hash}`, { scroll: false })

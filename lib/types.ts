@@ -44,8 +44,8 @@ export interface Product {
 
 // API Response Types
 export type AnalysisResult =
-  | { status: 'success'; data: AnalysisData }
-  | { status: 'cached'; data: AnalysisData; cached_at: string }
+  | { status: 'success'; data: AnalysisData; product_id?: number }
+  | { status: 'cached'; data: AnalysisData; cached_at: string; product_id?: number }
   | { status: 'poor_quality'; message: string; suggestion: string }
   | { status: 'not_product'; detected_type: string; message: string }
   | { status: 'error'; message: string; retry_after?: number }
