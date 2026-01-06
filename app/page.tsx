@@ -147,6 +147,21 @@ export default function Home() {
     }
   }
 
+  const handleViewGlobalProduct = async (product: GlobalProduct) => {
+    // Fetch or create share link for this product
+    try {
+      const response = await fetch(`/api/product/${product.ingredients_hash}/share`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.status === 'success' && data.hash) {
+          router.push(`/${data.hash}`)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load product:', error)
+    }
+  }
+
   return (
     <main className="min-h-screen bg-black font-mono text-white">
       <div className="max-w-2xl mx-auto px-4 py-6">
@@ -223,9 +238,10 @@ export default function Home() {
                 {showGlobal && (
                   <div className="space-y-2">
                     {globalProducts.slice(0, 10).map((product) => (
-                      <div
+                      <button
                         key={product.ingredients_hash}
-                        className="w-full text-left p-3 border border-gray-900 bg-gray-950/50"
+                        onClick={() => handleViewGlobalProduct(product)}
+                        className="w-full text-left p-3 border border-gray-900 bg-gray-950/50 hover:border-gray-700 hover:bg-gray-950 transition-colors"
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex-1 min-w-0">
@@ -240,13 +256,14 @@ export default function Home() {
                               {product.times_requested > 1 && ` • ${product.times_requested}x`}
                             </div>
                           </div>
-                          <div className="ml-2">
+                          <div className="ml-2 flex items-center gap-2">
                             <span className="text-xs px-2 py-1 bg-gray-900 text-gray-500 border border-gray-800">
                               {product.category}
                             </span>
+                            <span className="text-green-600">→</span>
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
