@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Camera from './components/Camera'
 import ResultCard from './components/ResultCard'
@@ -35,6 +35,18 @@ export default function Home() {
   const [globalProducts, setGlobalProducts] = useState<GlobalProduct[]>([])
   const [showGlobal, setShowGlobal] = useState(false)
 
+  // Function to fetch global products
+  const fetchGlobalProducts = useCallback(() => {
+    fetch('/api/products/recent')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.status === 'success') {
+          setGlobalProducts(data.products)
+        }
+      })
+      .catch((err) => console.error('Failed to fetch global products:', err))
+  }, [])
+
   useEffect(() => {
     if (state !== 'analyzing') return
     const interval = setInterval(() => {
@@ -49,23 +61,12 @@ export default function Home() {
 
   useEffect(() => {
     // Fetch global products on mount and refresh periodically
-    const fetchGlobal = () => {
-      fetch('/api/products/recent')
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.status === 'success') {
-            setGlobalProducts(data.products)
-          }
-        })
-        .catch((err) => console.error('Failed to fetch global products:', err))
-    }
-
-    fetchGlobal()
+    fetchGlobalProducts()
 
     // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchGlobal, 10000)
+    const interval = setInterval(fetchGlobalProducts, 10000)
     return () => clearInterval(interval)
-  }, [state])
+  }, [state, fetchGlobalProducts])
 
   // Function to format relative time
   const formatRelativeTime = (dateString: string): string => {
@@ -110,6 +111,11 @@ export default function Home() {
           setShareHash(hash)
           router.push(`/${hash}`, { scroll: false })
         }
+
+        // Refresh global feed after a short delay to ensure DB transaction completes
+        setTimeout(() => {
+          fetchGlobalProducts()
+        }, 500)
       } else if (data.status === 'poor_quality') {
         setError(data.message + '\n\n' + data.suggestion)
         setState('error')
