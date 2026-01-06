@@ -34,10 +34,12 @@ export default function Home() {
   const [shareHash, setShareHash] = useState<string>('')
   const [globalProducts, setGlobalProducts] = useState<GlobalProduct[]>([])
   const [showGlobal, setShowGlobal] = useState(false)
+  const [isRefreshingGlobal, setIsRefreshingGlobal] = useState(false)
 
   // Function to fetch global products
   const fetchGlobalProducts = useCallback(() => {
     console.log('🔄 Fetching global products...')
+    setIsRefreshingGlobal(true)
     fetch('/api/products/recent')
       .then((res) => res.json())
       .then((data) => {
@@ -48,6 +50,9 @@ export default function Home() {
         }
       })
       .catch((err) => console.error('❌ Failed to fetch global products:', err))
+      .finally(() => {
+        setTimeout(() => setIsRefreshingGlobal(false), 300)
+      })
   }, [])
 
   useEffect(() => {
@@ -66,8 +71,8 @@ export default function Home() {
     // Fetch global products on mount and refresh periodically
     fetchGlobalProducts()
 
-    // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchGlobalProducts, 10000)
+    // Auto-refresh every 3 seconds for real-time updates
+    const interval = setInterval(fetchGlobalProducts, 3000)
     return () => clearInterval(interval)
   }, [state, fetchGlobalProducts])
 
@@ -114,13 +119,13 @@ export default function Home() {
         if (hash) {
           setShareHash(hash)
           router.push(`/${hash}`, { scroll: false })
-        }
 
-        // Refresh global feed after a delay to ensure DB transaction completes
-        setTimeout(() => {
-          console.log('⏰ Triggering global feed refresh after scan...')
-          fetchGlobalProducts()
-        }, 1000)
+          // Refresh global feed immediately after share link is created
+          setTimeout(() => {
+            console.log('⏰ Triggering global feed refresh after scan...')
+            fetchGlobalProducts()
+          }, 500)
+        }
       } else if (data.status === 'poor_quality') {
         setError(data.message + '\n\n' + data.suggestion)
         setState('error')
@@ -244,12 +249,17 @@ export default function Home() {
             {globalProducts.length > 0 && (
               <div className="border-t border-gray-900 pt-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-sm text-gray-500">LATEST 20 PRODUCTS</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm text-gray-500">LATEST 20 PRODUCTS</h2>
+                    {isRefreshingGlobal && (
+                      <span className="text-xs text-green-400 animate-pulse">●</span>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <button
                       onClick={fetchGlobalProducts}
-                      className="text-xs text-gray-600 hover:text-gray-400"
-                      title="Refresh feed"
+                      className={`text-xs text-gray-600 hover:text-gray-400 ${isRefreshingGlobal ? 'animate-spin' : ''}`}
+                      title="Refresh feed (auto-refreshes every 3s)"
                     >
                       ↻
                     </button>
@@ -264,7 +274,7 @@ export default function Home() {
 
                 {showGlobal && (
                   <div className="space-y-2">
-                    {globalProducts.slice(0, 10).map((product) => (
+                    {globalProducts.map((product) => (
                       <button
                         key={product.ingredients_hash}
                         onClick={() => handleViewGlobalProduct(product)}
