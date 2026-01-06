@@ -37,14 +37,17 @@ export default function Home() {
 
   // Function to fetch global products
   const fetchGlobalProducts = useCallback(() => {
+    console.log('🔄 Fetching global products...')
     fetch('/api/products/recent')
       .then((res) => res.json())
       .then((data) => {
+        console.log('📦 Global products response:', data)
         if (data.status === 'success') {
+          console.log(`✅ Loaded ${data.products.length} products`)
           setGlobalProducts(data.products)
         }
       })
-      .catch((err) => console.error('Failed to fetch global products:', err))
+      .catch((err) => console.error('❌ Failed to fetch global products:', err))
   }, [])
 
   useEffect(() => {
@@ -113,10 +116,11 @@ export default function Home() {
           router.push(`/${hash}`, { scroll: false })
         }
 
-        // Refresh global feed after a short delay to ensure DB transaction completes
+        // Refresh global feed after a delay to ensure DB transaction completes
         setTimeout(() => {
+          console.log('⏰ Triggering global feed refresh after scan...')
           fetchGlobalProducts()
-        }, 500)
+        }, 1000)
       } else if (data.status === 'poor_quality') {
         setError(data.message + '\n\n' + data.suggestion)
         setState('error')
@@ -241,12 +245,21 @@ export default function Home() {
               <div className="border-t border-gray-900 pt-8">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-sm text-gray-500">LATEST 20 PRODUCTS</h2>
-                  <button
-                    onClick={() => setShowGlobal(!showGlobal)}
-                    className="text-xs text-green-600 hover:text-green-500"
-                  >
-                    {showGlobal ? 'HIDE' : `SHOW (${globalProducts.length})`}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={fetchGlobalProducts}
+                      className="text-xs text-gray-600 hover:text-gray-400"
+                      title="Refresh feed"
+                    >
+                      ↻
+                    </button>
+                    <button
+                      onClick={() => setShowGlobal(!showGlobal)}
+                      className="text-xs text-green-600 hover:text-green-500"
+                    >
+                      {showGlobal ? 'HIDE' : `SHOW (${globalProducts.length})`}
+                    </button>
+                  </div>
                 </div>
 
                 {showGlobal && (
