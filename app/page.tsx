@@ -107,7 +107,7 @@ export default function Home() {
         console.log(`📊 Analysis complete for ${data.data.product_name}, product_id: ${data.product_id}`)
         setResult(data)
         setState('success')
-        addToHistory(data.data)
+        addToHistory(data.data, data.product_id)
 
         // Generate shareable hash and update URL with product ID for proper linking
         const hash = await saveSharedResult(data.data, data.product_id)
@@ -151,8 +151,8 @@ export default function Home() {
     setResult({ status: 'cached', data: item.data, cached_at: new Date(item.timestamp).toISOString() })
     setState('success')
 
-    // Generate shareable hash for history item
-    const hash = await saveSharedResult(item.data)
+    // Generate shareable hash for history item with product_id if available
+    const hash = await saveSharedResult(item.data, item.product_id)
     if (hash) {
       setShareHash(hash)
       router.push(`/${hash}`, { scroll: false })

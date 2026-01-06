@@ -42,8 +42,6 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [dbTest, setDbTest] = useState<DbTestResult | null>(null)
   const [linkStats, setLinkStats] = useState<LinkStats | null>(null)
-  const [initStatus, setInitStatus] = useState<string>('')
-  const [loading, setLoading] = useState(false)
 
   const checkHealth = async () => {
     setHealth({ api: 'checking', database: 'checking' })
@@ -64,27 +62,6 @@ export default function AdminPage() {
         database: 'error',
         apiMessage: 'Failed to check health',
       })
-    }
-  }
-
-  const initDatabase = async () => {
-    setLoading(true)
-    setInitStatus('Initializing database...')
-
-    try {
-      const response = await fetch('/api/admin/init', { method: 'POST' })
-      const data = await response.json()
-
-      if (data.success) {
-        setInitStatus('✅ Database initialized successfully!')
-        setTimeout(() => checkHealth(), 1000)
-      } else {
-        setInitStatus(`❌ Error: ${data.error}`)
-      }
-    } catch (error) {
-      setInitStatus(`❌ Failed to initialize: ${error}`)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -186,32 +163,9 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* 2. Database Initialization */}
+        {/* 2. Statistics */}
         <div className="border border-gray-700 bg-gray-800 p-6">
-          <h2 className="text-xl font-bold mb-4">2. DATABASE INITIALIZATION</h2>
-          <div className="flex items-start gap-2 mb-4 text-yellow-400">
-            <span>⚠</span>
-            <span className="text-sm">Run this ONCE to create database tables and indexes</span>
-          </div>
-
-          {initStatus && (
-            <div className="bg-gray-900 p-3 rounded text-sm mb-4">
-              {initStatus}
-            </div>
-          )}
-
-          <button
-            onClick={initDatabase}
-            disabled={loading}
-            className="px-6 py-2 border border-white hover:bg-white hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'INITIALIZING...' : 'RUN MIGRATION'}
-          </button>
-        </div>
-
-        {/* 3. Statistics */}
-        <div className="border border-gray-700 bg-gray-800 p-6">
-          <h2 className="text-xl font-bold mb-4">3. STATISTICS</h2>
+          <h2 className="text-xl font-bold mb-4">2. STATISTICS</h2>
           <p className="text-gray-400 mb-4">View database statistics and recent analyses</p>
 
           {stats && (
@@ -253,9 +207,9 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* 4. Database Test */}
+        {/* 3. Database Test */}
         <div className="border border-gray-700 bg-gray-800 p-6">
-          <h2 className="text-xl font-bold mb-4">4. DATABASE CONNECTIVITY TEST</h2>
+          <h2 className="text-xl font-bold mb-4">3. DATABASE CONNECTIVITY TEST</h2>
           <p className="text-gray-400 mb-4">Test database operations (read/write/delete)</p>
 
           {dbTest && (
@@ -306,9 +260,9 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* 5. Share Link Diagnostics */}
+        {/* 4. Share Link Diagnostics */}
         <div className="border border-gray-700 bg-gray-800 p-6">
-          <h2 className="text-xl font-bold mb-4">5. SHARE LINK DIAGNOSTICS</h2>
+          <h2 className="text-xl font-bold mb-4">4. SHARE LINK DIAGNOSTICS</h2>
           <p className="text-gray-400 mb-4">Check product/share link relationship</p>
 
           {linkStats && (
@@ -330,17 +284,21 @@ export default function AdminPage() {
 
               {linkStats.recent_products && linkStats.recent_products.length > 0 && (
                 <div className="bg-gray-900 p-4 rounded">
-                  <h3 className="font-bold mb-2">Recent Products (with link status):</h3>
+                  <h3 className="font-bold mb-2">Recent Products With Share Links:</h3>
                   <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
-                    {linkStats.recent_products.slice(0, 10).map((product: any, i: number) => (
-                      <div key={i} className="flex justify-between py-1 border-b border-gray-800">
-                        <span className="truncate flex-1">{product.product_name || 'Unknown'}</span>
-                        <span className={product.share_hash ? 'text-green-400' : 'text-red-400'}>
-                          {product.share_hash ? `✓ ${product.share_hash}` : '✗ No link'}
-                        </span>
-                      </div>
-                    ))}
+                    {linkStats.recent_products
+                      .filter((product: any) => product.share_hash) // Only products with links
+                      .slice(0, 10)
+                      .map((product: any, i: number) => (
+                        <div key={i} className="flex justify-between py-1 border-b border-gray-800">
+                          <span className="truncate flex-1">{product.product_name || 'Unknown'}</span>
+                          <span className="text-green-400">✓ {product.share_hash}</span>
+                        </div>
+                      ))}
                   </div>
+                  {linkStats.recent_products.filter((p: any) => p.share_hash).length === 0 && (
+                    <div className="text-gray-500 text-xs">No products with share links yet</div>
+                  )}
                 </div>
               )}
 
@@ -363,9 +321,9 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* 6. Quick Links */}
+        {/* 5. Quick Links */}
         <div className="border border-gray-700 bg-gray-800 p-6">
-          <h2 className="text-xl font-bold mb-4">6. QUICK LINKS</h2>
+          <h2 className="text-xl font-bold mb-4">5. QUICK LINKS</h2>
           <div className="space-y-2 text-sm">
             <div>
               <a href="/" className="text-blue-400 hover:underline">→ Main Application</a>

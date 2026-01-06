@@ -4,6 +4,7 @@ export interface HistoryItem {
   id: string
   timestamp: number
   data: AnalysisData
+  product_id?: number
 }
 
 const HISTORY_KEY = 'analyzer_history'
@@ -22,7 +23,7 @@ export function getHistory(): HistoryItem[] {
   }
 }
 
-export function addToHistory(data: AnalysisData): void {
+export function addToHistory(data: AnalysisData, product_id?: number): void {
   if (typeof window === 'undefined') return
 
   try {
@@ -40,6 +41,7 @@ export function addToHistory(data: AnalysisData): void {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       data,
+      product_id,
     }
 
     // If exists, remove old entry
