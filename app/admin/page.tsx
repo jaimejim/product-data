@@ -16,12 +16,32 @@ interface Stats {
   recentProducts: any[]
 }
 
+interface DbTestResult {
+  success: boolean
+  connection?: string
+  current_time?: string
+  product_count?: string
+  insert_test?: string
+  insert_error?: string
+  error?: string
+}
+
+interface LinkStats {
+  total_products: string
+  products_with_links: string
+  products_without_links: string
+  recent_products: any[]
+  orphaned_links: any[]
+}
+
 export default function AdminPage() {
   const [health, setHealth] = useState<HealthStatus>({
     api: 'checking',
     database: 'checking',
   })
   const [stats, setStats] = useState<Stats | null>(null)
+  const [dbTest, setDbTest] = useState<DbTestResult | null>(null)
+  const [linkStats, setLinkStats] = useState<LinkStats | null>(null)
   const [initStatus, setInitStatus] = useState<string>('')
   const [loading, setLoading] = useState(false)
 
@@ -75,6 +95,27 @@ export default function AdminPage() {
       setStats(data)
     } catch (error) {
       console.error('Failed to load stats:', error)
+    }
+  }
+
+  const testDatabase = async () => {
+    try {
+      const response = await fetch('/api/test-db')
+      const data = await response.json()
+      setDbTest(data)
+    } catch (error) {
+      console.error('Failed to test database:', error)
+      setDbTest({ success: false, error: String(error) })
+    }
+  }
+
+  const loadLinkStats = async () => {
+    try {
+      const response = await fetch('/api/debug/links')
+      const data = await response.json()
+      setLinkStats(data.stats ? data : null)
+    } catch (error) {
+      console.error('Failed to load link stats:', error)
     }
   }
 
@@ -212,9 +253,119 @@ export default function AdminPage() {
           </button>
         </div>
 
-        {/* 4. Quick Links */}
+        {/* 4. Database Test */}
         <div className="border border-gray-700 bg-gray-800 p-6">
-          <h2 className="text-xl font-bold mb-4">4. QUICK LINKS</h2>
+          <h2 className="text-xl font-bold mb-4">4. DATABASE CONNECTIVITY TEST</h2>
+          <p className="text-gray-400 mb-4">Test database operations (read/write/delete)</p>
+
+          {dbTest && (
+            <div className="bg-gray-900 p-4 rounded mb-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Status:</span>
+                <span className={dbTest.success ? 'text-green-400' : 'text-red-400'}>
+                  {dbTest.success ? '✓ SUCCESS' : '✗ FAILED'}
+                </span>
+              </div>
+              {dbTest.connection && (
+                <div className="flex justify-between">
+                  <span>Connection:</span>
+                  <span className="text-green-400">{dbTest.connection}</span>
+                </div>
+              )}
+              {dbTest.product_count && (
+                <div className="flex justify-between">
+                  <span>Product Count:</span>
+                  <span className="text-blue-400">{dbTest.product_count}</span>
+                </div>
+              )}
+              {dbTest.insert_test && (
+                <div className="flex justify-between">
+                  <span>Insert Test:</span>
+                  <span className={dbTest.insert_test.includes('OK') ? 'text-green-400' : 'text-red-400'}>
+                    {dbTest.insert_test}
+                  </span>
+                </div>
+              )}
+              {dbTest.insert_error && (
+                <div className="text-red-400">
+                  <div>Insert Error:</div>
+                  <div className="text-xs mt-1">{dbTest.insert_error}</div>
+                </div>
+              )}
+              {dbTest.error && (
+                <div className="text-red-400">Error: {dbTest.error}</div>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={testDatabase}
+            className="px-6 py-2 border border-white hover:bg-white hover:text-black transition-colors"
+          >
+            RUN DATABASE TEST
+          </button>
+        </div>
+
+        {/* 5. Share Link Diagnostics */}
+        <div className="border border-gray-700 bg-gray-800 p-6">
+          <h2 className="text-xl font-bold mb-4">5. SHARE LINK DIAGNOSTICS</h2>
+          <p className="text-gray-400 mb-4">Check product/share link relationship</p>
+
+          {linkStats && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-900 p-4 rounded">
+                  <div className="text-2xl font-bold">{linkStats.total_products}</div>
+                  <div className="text-sm text-gray-400">Total Products</div>
+                </div>
+                <div className="bg-gray-900 p-4 rounded">
+                  <div className="text-2xl font-bold text-green-400">{linkStats.products_with_links}</div>
+                  <div className="text-sm text-gray-400">With Share Links</div>
+                </div>
+                <div className="bg-gray-900 p-4 rounded">
+                  <div className="text-2xl font-bold text-yellow-400">{linkStats.products_without_links}</div>
+                  <div className="text-sm text-gray-400">Without Links</div>
+                </div>
+              </div>
+
+              {linkStats.recent_products && linkStats.recent_products.length > 0 && (
+                <div className="bg-gray-900 p-4 rounded">
+                  <h3 className="font-bold mb-2">Recent Products (with link status):</h3>
+                  <div className="space-y-1 text-xs max-h-48 overflow-y-auto">
+                    {linkStats.recent_products.slice(0, 10).map((product: any, i: number) => (
+                      <div key={i} className="flex justify-between py-1 border-b border-gray-800">
+                        <span className="truncate flex-1">{product.product_name || 'Unknown'}</span>
+                        <span className={product.share_hash ? 'text-green-400' : 'text-red-400'}>
+                          {product.share_hash ? `✓ ${product.share_hash}` : '✗ No link'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {linkStats.orphaned_links && linkStats.orphaned_links.length > 0 && (
+                <div className="bg-yellow-900/20 border border-yellow-700 p-4 rounded">
+                  <h3 className="font-bold mb-2 text-yellow-400">⚠ Orphaned Share Links:</h3>
+                  <div className="text-xs text-gray-300">
+                    {linkStats.orphaned_links.length} share links without product_id
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={loadLinkStats}
+            className="px-6 py-2 border border-white hover:bg-white hover:text-black transition-colors"
+          >
+            LOAD LINK DIAGNOSTICS
+          </button>
+        </div>
+
+        {/* 6. Quick Links */}
+        <div className="border border-gray-700 bg-gray-800 p-6">
+          <h2 className="text-xl font-bold mb-4">6. QUICK LINKS</h2>
           <div className="space-y-2 text-sm">
             <div>
               <a href="/" className="text-blue-400 hover:underline">→ Main Application</a>
