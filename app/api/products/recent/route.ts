@@ -16,9 +16,14 @@ export async function GET() {
         p.created_at,
         p.updated_at,
         p.times_requested,
-        sl.share_hash
+        (
+          SELECT share_hash
+          FROM shared_links
+          WHERE product_id = p.id
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) as share_hash
       FROM products p
-      LEFT JOIN shared_links sl ON sl.product_id = p.id
       ORDER BY p.updated_at DESC
       LIMIT 20
     `
