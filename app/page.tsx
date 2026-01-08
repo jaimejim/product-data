@@ -109,13 +109,21 @@ export default function Home() {
       const data: AnalysisResult = await response.json()
 
       if (data.status === 'success' || data.status === 'cached') {
-        console.log(`📊 Analysis complete for ${data.data.product_name}, product_id: ${data.product_id}`)
+        console.log(`📊 Analysis complete for ${data.data.product_name}`)
+        console.log(`📊 Product ID from API: ${data.product_id} (type: ${typeof data.product_id})`)
+
         setResult(data)
         setState('success')
         addToHistory(data.data, data.product_id)
 
+        // Add small delay to ensure DB transaction is fully committed
+        await new Promise(resolve => setTimeout(resolve, 200))
+
         // Generate shareable hash and update URL with product ID for proper linking
+        console.log(`📤 About to call saveSharedResult with product_id: ${data.product_id}`)
         const hash = await saveSharedResult(data.data, data.product_id)
+        console.log(`📥 saveSharedResult returned hash: ${hash}`)
+
         if (hash) {
           setShareHash(hash)
           router.push(`/${hash}`, { scroll: false })
