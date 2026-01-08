@@ -23,7 +23,11 @@ export async function POST(request: NextRequest) {
       productId?: number
     }
 
-    console.log(`🔗 Creating share link for: ${analysisData.product_name} (provided ID: ${productId || 'none'})`)
+    console.log('=== SHARE LINK CREATION START ===')
+    console.log(`Product: ${analysisData.product_name}`)
+    console.log(`Brand: ${analysisData.brand || 'NULL'}`)
+    console.log(`Provided product_id: ${productId}`)
+    console.log(`Type of product_id: ${typeof productId}`)
 
     if (!analysisData) {
       return NextResponse.json({ status: 'error', message: 'Missing analysis data' }, { status: 400 })
@@ -32,10 +36,12 @@ export async function POST(request: NextRequest) {
     // If no productId provided, try to find product by name and brand
     let finalProductId = productId
     if (!finalProductId && analysisData.product_name) {
+      console.log(`⚠️ No product_id provided, attempting database lookup...`)
       try {
         // Match by product name and brand (handling null brands correctly)
         let productLookup
         if (analysisData.brand) {
+          console.log(`Searching for: name="${analysisData.product_name}", brand="${analysisData.brand}"`)
           productLookup = await sql`
             SELECT id FROM products
             WHERE product_name = ${analysisData.product_name}
@@ -44,6 +50,7 @@ export async function POST(request: NextRequest) {
             LIMIT 1
           `
         } else {
+          console.log(`Searching for: name="${analysisData.product_name}", brand=NULL`)
           productLookup = await sql`
             SELECT id FROM products
             WHERE product_name = ${analysisData.product_name}
@@ -55,14 +62,17 @@ export async function POST(request: NextRequest) {
 
         if (productLookup.rows.length > 0) {
           finalProductId = productLookup.rows[0].id
-          console.log(`✓ Linked share to product ID: ${finalProductId}`)
+          console.log(`✓ Found product in database! Using product_id: ${finalProductId}`)
         } else {
-          console.warn(`⚠ Product not found in database: ${analysisData.product_name}`)
+          console.warn(`⚠️ Product NOT found in database: ${analysisData.product_name}`)
+          console.warn(`This share link will be orphaned (product_id = NULL)`)
         }
       } catch (error) {
-        console.error('Failed to lookup product:', error)
+        console.error('❌ Failed to lookup product:', error)
         // Continue without product_id
       }
+    } else if (finalProductId) {
+      console.log(`✓ Product ID provided directly: ${finalProductId}`)
     }
 
     // Generate unique hash (retry if collision)
@@ -70,19 +80,25 @@ export async function POST(request: NextRequest) {
     let attempts = 0
     const maxAttempts = 10
 
+    console.log(`Attempting to insert share link with product_id: ${finalProductId || 'NULL'}`)
+
     while (attempts < maxAttempts) {
       try {
-        await sql`
+        const insertResult = await sql`
           INSERT INTO shared_links (share_hash, analysis_data, product_id)
           VALUES (${hash}, ${JSON.stringify(analysisData)}, ${finalProductId || null})
+          RETURNING share_hash, product_id, created_at
         `
+        console.log(`✅ Database insert successful:`, insertResult.rows[0])
         break // Success
       } catch (error: any) {
         if (error.code === '23505') {
           // Unique violation, try new hash
+          console.log(`Hash collision on ${hash}, generating new hash...`)
           hash = generateHash()
           attempts++
         } else {
+          console.error(`❌ Database insert failed:`, error)
           throw error
         }
       }
@@ -95,7 +111,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`✅ Share link created: ${hash} (product_id: ${finalProductId || 'null'})`)
+    console.log(`=== SHARE LINK CREATED: ${hash} with product_id=${finalProductId || 'NULL'} ===`)
 
     return NextResponse.json({
       status: 'success',
