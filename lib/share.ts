@@ -12,17 +12,17 @@ export function generateHash(): string {
   return hash
 }
 
-export async function saveSharedResult(data: AnalysisData, productId?: number): Promise<string> {
+export async function saveSharedResult(data: AnalysisData, productId?: number, ingredientsHash?: string): Promise<string> {
   if (typeof window === 'undefined') return ''
 
-  console.log(`📤 saveSharedResult called with productId: ${productId}, product: ${data.product_name}`)
+  console.log(`📤 saveSharedResult called with productId: ${productId}, hash: ${ingredientsHash}, product: ${data.product_name}`)
 
   try {
     // Save to database via API
     const response = await fetch('/api/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ analysisData: data, productId }),
+      body: JSON.stringify({ analysisData: data, productId, ingredientsHash }),
     })
 
     console.log(`📥 Share API responded with status: ${response.status}`)

@@ -74,13 +74,14 @@ export async function POST(request: NextRequest) {
     if (cachedProduct) {
       const elapsed = Date.now() - startTime
       console.log(`⚡ Cache HIT! Returned in ${elapsed}ms`)
-      console.log(`📤 Returning cached product_id: ${cachedProduct.id} to frontend`)
+      console.log(`📤 Returning cached product_id: ${cachedProduct.id}, hash: ${ingredientsHash}`)
 
       return NextResponse.json({
         status: 'cached',
         data: productToAnalysisData(cachedProduct),
         cached_at: cachedProduct.created_at.toISOString(),
         product_id: cachedProduct.id,
+        ingredients_hash: ingredientsHash,
       } as AnalysisResult)
     }
 
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     const elapsed = Date.now() - startTime
     console.log(`✨ Analysis complete in ${elapsed}ms`)
-    console.log(`📤 Returning product_id: ${product.id} to frontend`)
+    console.log(`📤 Returning product_id: ${product.id}, hash: ${ingredientsHash}`)
 
     // Return success response
     return NextResponse.json({
@@ -109,6 +110,7 @@ export async function POST(request: NextRequest) {
         summary: analysis.summary,
       },
       product_id: product.id,
+      ingredients_hash: ingredientsHash,
     } as AnalysisResult)
 
   } catch (error) {

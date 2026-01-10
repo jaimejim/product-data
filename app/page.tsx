@@ -120,8 +120,8 @@ export default function Home() {
         await new Promise(resolve => setTimeout(resolve, 200))
 
         // Generate shareable hash and update URL with product ID for proper linking
-        console.log(`📤 About to call saveSharedResult with product_id: ${data.product_id}`)
-        const hash = await saveSharedResult(data.data, data.product_id)
+        console.log(`📤 About to call saveSharedResult with product_id: ${data.product_id}, hash: ${data.ingredients_hash}`)
+        const hash = await saveSharedResult(data.data, data.product_id, data.ingredients_hash)
         console.log(`📥 saveSharedResult returned hash: ${hash}`)
 
         if (hash) {
