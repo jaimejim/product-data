@@ -39,6 +39,8 @@ interface OrphanRepairResult {
   total?: number
   fixed?: number
   deleted?: number
+  created?: number
+  failed?: number
   message?: string
   error?: string
   deletedLinks?: string[]
