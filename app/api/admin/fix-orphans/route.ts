@@ -19,7 +19,8 @@ export async function POST() {
     console.log(`Found ${orphanedLinks.rows.length} orphaned share links`)
 
     let fixed = 0
-    let failed = 0
+    let deleted = 0
+    const failedLinks: string[] = []
 
     // Try to link each orphaned share link to its product
     for (const link of orphanedLinks.rows) {
@@ -28,8 +29,9 @@ export async function POST() {
       const brand = analysisData.brand
 
       if (!productName) {
-        console.log(`Skipping ${link.share_hash} - no product name`)
-        failed++
+        console.log(`Deleting ${link.share_hash} - no product name`)
+        await sql`DELETE FROM shared_links WHERE share_hash = ${link.share_hash}`
+        deleted++
         continue
       }
 
@@ -65,12 +67,18 @@ export async function POST() {
           console.log(`✅ Fixed ${link.share_hash}: "${productName}" → product_id ${productId}`)
           fixed++
         } else {
-          console.log(`⚠️ No product found for "${productName}" (brand: ${brand || 'NULL'})`)
-          failed++
+          // Product doesn't exist - delete the orphaned link
+          console.log(`🗑️ Deleting orphaned link ${link.share_hash} - product "${productName}" not found`)
+          await sql`DELETE FROM shared_links WHERE share_hash = ${link.share_hash}`
+          deleted++
+          failedLinks.push(link.share_hash)
         }
       } catch (error) {
-        console.error(`❌ Error fixing ${link.share_hash}:`, error)
-        failed++
+        console.error(`❌ Error processing ${link.share_hash}:`, error)
+        // Delete problematic links
+        await sql`DELETE FROM shared_links WHERE share_hash = ${link.share_hash}`
+        deleted++
+        failedLinks.push(link.share_hash)
       }
     }
 
@@ -78,8 +86,9 @@ export async function POST() {
       success: true,
       total: orphanedLinks.rows.length,
       fixed,
-      failed,
-      message: `Fixed ${fixed} orphaned links, ${failed} could not be fixed`,
+      deleted,
+      message: `Fixed ${fixed} orphaned links, deleted ${deleted} unfixable links`,
+      deletedLinks: failedLinks.slice(0, 10), // Show first 10
     })
   } catch (error) {
     console.error('Error repairing orphaned links:', error)

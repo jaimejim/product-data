@@ -38,9 +38,10 @@ interface OrphanRepairResult {
   success: boolean
   total?: number
   fixed?: number
-  failed?: number
+  deleted?: number
   message?: string
   error?: string
+  deletedLinks?: string[]
 }
 
 export default function AdminPage() {
@@ -53,6 +54,8 @@ export default function AdminPage() {
   const [linkStats, setLinkStats] = useState<LinkStats | null>(null)
   const [repairResult, setRepairResult] = useState<OrphanRepairResult | null>(null)
   const [isRepairing, setIsRepairing] = useState(false)
+  const [createResult, setCreateResult] = useState<OrphanRepairResult | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
 
   const checkHealth = async () => {
     setHealth({ api: 'checking', database: 'checking' })
@@ -115,7 +118,7 @@ export default function AdminPage() {
       const data = await response.json()
       setRepairResult(data)
       // Reload link stats after repair
-      if (data.success && data.fixed > 0) {
+      if (data.success && (data.fixed > 0 || data.deleted > 0)) {
         setTimeout(() => loadLinkStats(), 1000)
       }
     } catch (error) {
@@ -123,6 +126,25 @@ export default function AdminPage() {
       setRepairResult({ success: false, error: String(error) })
     } finally {
       setIsRepairing(false)
+    }
+  }
+
+  const createMissingLinks = async () => {
+    setIsCreating(true)
+    setCreateResult(null)
+    try {
+      const response = await fetch('/api/admin/create-missing-links', { method: 'POST' })
+      const data = await response.json()
+      setCreateResult(data)
+      // Reload link stats after creation
+      if (data.success && data.created > 0) {
+        setTimeout(() => loadLinkStats(), 1000)
+      }
+    } catch (error) {
+      console.error('Failed to create missing links:', error)
+      setCreateResult({ success: false, error: String(error) })
+    } finally {
+      setIsCreating(false)
     }
   }
 
@@ -312,6 +334,41 @@ export default function AdminPage() {
                 </div>
               </div>
 
+              {linkStats.products_without_links && parseInt(linkStats.products_without_links) > 0 && (
+                <div className="bg-blue-900/20 border border-blue-700 p-4 rounded">
+                  <h3 className="font-bold mb-2 text-blue-400">ℹ️ Products Without Share Links</h3>
+                  <div className="text-xs text-gray-300 mb-3">
+                    {linkStats.products_without_links} products don't have share links yet
+                  </div>
+                  <button
+                    onClick={createMissingLinks}
+                    disabled={isCreating}
+                    className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isCreating ? 'CREATING LINKS...' : 'CREATE MISSING SHARE LINKS'}
+                  </button>
+                </div>
+              )}
+
+              {createResult && (
+                <div className={`p-4 rounded ${createResult.success ? 'bg-green-900/20 border border-green-700' : 'bg-red-900/20 border border-red-700'}`}>
+                  <h3 className="font-bold mb-2">{createResult.success ? '✅ Creation Complete' : '❌ Creation Failed'}</h3>
+                  {createResult.success && (
+                    <div className="text-sm space-y-1">
+                      <div>Products without links: {createResult.total}</div>
+                      <div className="text-green-400">✓ Created: {createResult.created}</div>
+                      {createResult.failed && createResult.failed > 0 && (
+                        <div className="text-red-400">✗ Failed: {createResult.failed}</div>
+                      )}
+                      <div className="text-gray-400 text-xs mt-2">{createResult.message}</div>
+                    </div>
+                  )}
+                  {!createResult.success && (
+                    <div className="text-red-400 text-sm">{createResult.error}</div>
+                  )}
+                </div>
+              )}
+
               {linkStats.recent_products && linkStats.recent_products.length > 0 && (
                 <div className="bg-gray-900 p-4 rounded">
                   <h3 className="font-bold mb-2">Recent Products With Share Links:</h3>
@@ -353,9 +410,9 @@ export default function AdminPage() {
                   <h3 className="font-bold mb-2">{repairResult.success ? '✅ Repair Complete' : '❌ Repair Failed'}</h3>
                   {repairResult.success && (
                     <div className="text-sm space-y-1">
-                      <div>Total orphaned links: {repairResult.total}</div>
-                      <div className="text-green-400">Fixed: {repairResult.fixed}</div>
-                      <div className="text-yellow-400">Failed: {repairResult.failed}</div>
+                      <div>Total orphaned links found: {repairResult.total}</div>
+                      <div className="text-green-400">✓ Fixed: {repairResult.fixed}</div>
+                      <div className="text-red-400">✗ Deleted: {repairResult.deleted}</div>
                       <div className="text-gray-400 text-xs mt-2">{repairResult.message}</div>
                     </div>
                   )}
