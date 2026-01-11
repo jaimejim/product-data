@@ -34,6 +34,15 @@ interface LinkStats {
   orphaned_links: any[]
 }
 
+interface OrphanRepairResult {
+  success: boolean
+  total?: number
+  fixed?: number
+  failed?: number
+  message?: string
+  error?: string
+}
+
 export default function AdminPage() {
   const [health, setHealth] = useState<HealthStatus>({
     api: 'checking',
@@ -42,6 +51,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [dbTest, setDbTest] = useState<DbTestResult | null>(null)
   const [linkStats, setLinkStats] = useState<LinkStats | null>(null)
+  const [repairResult, setRepairResult] = useState<OrphanRepairResult | null>(null)
+  const [isRepairing, setIsRepairing] = useState(false)
 
   const checkHealth = async () => {
     setHealth({ api: 'checking', database: 'checking' })
@@ -93,6 +104,25 @@ export default function AdminPage() {
       setLinkStats(data.stats ? data : null)
     } catch (error) {
       console.error('Failed to load link stats:', error)
+    }
+  }
+
+  const repairOrphanedLinks = async () => {
+    setIsRepairing(true)
+    setRepairResult(null)
+    try {
+      const response = await fetch('/api/admin/fix-orphans', { method: 'POST' })
+      const data = await response.json()
+      setRepairResult(data)
+      // Reload link stats after repair
+      if (data.success && data.fixed > 0) {
+        setTimeout(() => loadLinkStats(), 1000)
+      }
+    } catch (error) {
+      console.error('Failed to repair orphaned links:', error)
+      setRepairResult({ success: false, error: String(error) })
+    } finally {
+      setIsRepairing(false)
     }
   }
 
@@ -305,9 +335,33 @@ export default function AdminPage() {
               {linkStats.orphaned_links && linkStats.orphaned_links.length > 0 && (
                 <div className="bg-yellow-900/20 border border-yellow-700 p-4 rounded">
                   <h3 className="font-bold mb-2 text-yellow-400">⚠ Orphaned Share Links:</h3>
-                  <div className="text-xs text-gray-300">
+                  <div className="text-xs text-gray-300 mb-3">
                     {linkStats.orphaned_links.length} share links without product_id
                   </div>
+                  <button
+                    onClick={repairOrphanedLinks}
+                    disabled={isRepairing}
+                    className="px-4 py-2 text-sm bg-yellow-600 hover:bg-yellow-700 text-black font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isRepairing ? 'REPAIRING...' : 'FIX ORPHANED LINKS'}
+                  </button>
+                </div>
+              )}
+
+              {repairResult && (
+                <div className={`p-4 rounded ${repairResult.success ? 'bg-green-900/20 border border-green-700' : 'bg-red-900/20 border border-red-700'}`}>
+                  <h3 className="font-bold mb-2">{repairResult.success ? '✅ Repair Complete' : '❌ Repair Failed'}</h3>
+                  {repairResult.success && (
+                    <div className="text-sm space-y-1">
+                      <div>Total orphaned links: {repairResult.total}</div>
+                      <div className="text-green-400">Fixed: {repairResult.fixed}</div>
+                      <div className="text-yellow-400">Failed: {repairResult.failed}</div>
+                      <div className="text-gray-400 text-xs mt-2">{repairResult.message}</div>
+                    </div>
+                  )}
+                  {!repairResult.success && (
+                    <div className="text-red-400 text-sm">{repairResult.error}</div>
+                  )}
                 </div>
               )}
             </div>
