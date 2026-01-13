@@ -22,7 +22,7 @@ export async function POST() {
     const productsWithoutLinks = await sql`
       SELECT p.id, p.product_name, p.brand, p.category, p.ingredients,
              p.health_score, p.toxicity_score, p.overall_rating,
-             p.concerns, p.positive_aspects, p.confidence_score, p.summary
+             p.concerns, p.positive_aspects, p.confidence_score
       FROM products p
       LEFT JOIN shared_links sl ON sl.product_id = p.id
       WHERE sl.product_id IS NULL
@@ -49,7 +49,7 @@ export async function POST() {
           concerns: product.concerns,
           positive_aspects: product.positive_aspects,
           confidence_score: product.confidence_score,
-          summary: product.summary,
+          summary: `${product.product_name || 'Product'} - Overall rating: ${product.overall_rating}/10`,
         }
 
         // Generate unique hash
