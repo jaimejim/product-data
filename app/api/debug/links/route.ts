@@ -8,11 +8,12 @@ export async function GET() {
     // Count total products
     const totalProducts = await sql`SELECT COUNT(*) as count FROM products`
 
-    // Count distinct products with share links (product_id IS NOT NULL)
+    // Count distinct products with share links (only products that actually exist)
     const productsWithLinks = await sql`
-      SELECT COUNT(DISTINCT product_id) as count
-      FROM shared_links
-      WHERE product_id IS NOT NULL
+      SELECT COUNT(DISTINCT sl.product_id) as count
+      FROM shared_links sl
+      INNER JOIN products p ON p.id = sl.product_id
+      WHERE sl.product_id IS NOT NULL
     `
 
     // Count total share links
@@ -28,11 +29,19 @@ export async function GET() {
       )
     `
 
-    // Count orphaned links
-    const orphanedLinksCount = await sql`
+    // Count orphaned links (NULL product_id)
+    const orphanedLinksNull = await sql`
       SELECT COUNT(*) as count
       FROM shared_links
       WHERE product_id IS NULL
+    `
+
+    // Count links pointing to deleted products
+    const orphanedLinksDeleted = await sql`
+      SELECT COUNT(*) as count
+      FROM shared_links sl
+      LEFT JOIN products p ON p.id = sl.product_id
+      WHERE sl.product_id IS NOT NULL AND p.id IS NULL
     `
 
     // Get recent products with their share link status (one row per product)
@@ -70,7 +79,8 @@ export async function GET() {
         products_with_links: Number(productsWithLinks.rows[0].count),
         products_without_links: Number(productsWithoutLinks.rows[0].count),
         total_share_links: Number(totalLinks.rows[0].count),
-        orphaned_links_count: Number(orphanedLinksCount.rows[0].count),
+        orphaned_links_null: Number(orphanedLinksNull.rows[0].count),
+        orphaned_links_deleted: Number(orphanedLinksDeleted.rows[0].count),
       },
       recent_products: recent.rows,
       orphaned_links: orphanedLinks.rows,

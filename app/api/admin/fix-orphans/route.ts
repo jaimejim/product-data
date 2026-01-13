@@ -9,21 +9,37 @@ export async function POST() {
     console.log('🔧 Starting orphan link repair...')
 
     // Find all orphaned share links (product_id IS NULL)
-    const orphanedLinks = await sql`
+    const orphanedLinksNull = await sql`
       SELECT share_hash, analysis_data
       FROM shared_links
       WHERE product_id IS NULL
       ORDER BY created_at DESC
     `
 
-    console.log(`Found ${orphanedLinks.rows.length} orphaned share links`)
+    // Find share links pointing to deleted products
+    const orphanedLinksDeleted = await sql`
+      SELECT sl.share_hash
+      FROM shared_links sl
+      LEFT JOIN products p ON p.id = sl.product_id
+      WHERE sl.product_id IS NOT NULL AND p.id IS NULL
+    `
+
+    console.log(`Found ${orphanedLinksNull.rows.length} NULL orphaned links and ${orphanedLinksDeleted.rows.length} links pointing to deleted products`)
 
     let fixed = 0
     let deleted = 0
     const failedLinks: string[] = []
 
-    // Try to link each orphaned share link to its product
-    for (const link of orphanedLinks.rows) {
+    // First, delete all links pointing to deleted products (no recovery possible)
+    for (const link of orphanedLinksDeleted.rows) {
+      console.log(`🗑️ Deleting link ${link.share_hash} - points to deleted product`)
+      await sql`DELETE FROM shared_links WHERE share_hash = ${link.share_hash}`
+      deleted++
+      failedLinks.push(link.share_hash)
+    }
+
+    // Try to link each NULL orphaned share link to its product
+    for (const link of orphanedLinksNull.rows) {
       const analysisData = link.analysis_data
       const productName = analysisData.product_name
       const brand = analysisData.brand
@@ -82,12 +98,14 @@ export async function POST() {
       }
     }
 
+    const totalOrphans = orphanedLinksNull.rows.length + orphanedLinksDeleted.rows.length
+
     return NextResponse.json({
       success: true,
-      total: orphanedLinks.rows.length,
+      total: totalOrphans,
       fixed,
       deleted,
-      message: `Fixed ${fixed} orphaned links, deleted ${deleted} unfixable links`,
+      message: `Fixed ${fixed} orphaned links, deleted ${deleted} unfixable links (${orphanedLinksDeleted.rows.length} pointed to deleted products)`,
       deletedLinks: failedLinks.slice(0, 10), // Show first 10
     })
   } catch (error) {

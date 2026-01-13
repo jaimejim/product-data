@@ -31,7 +31,8 @@ interface LinkStats {
   products_with_links: number
   products_without_links: number
   total_share_links: number
-  orphaned_links_count: number
+  orphaned_links_null: number
+  orphaned_links_deleted: number
   recent_products: any[]
   orphaned_links: any[]
 }
@@ -418,11 +419,17 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {linkStats.orphaned_links_count > 0 && (
+              {(linkStats.orphaned_links_null > 0 || linkStats.orphaned_links_deleted > 0) && (
                 <div className="bg-yellow-900/20 border border-yellow-700 p-4 rounded">
                   <h3 className="font-bold mb-2 text-yellow-400">⚠ Orphaned Share Links:</h3>
-                  <div className="text-sm text-gray-300 mb-3">
-                    {linkStats.orphaned_links_count} share link{linkStats.orphaned_links_count !== 1 ? 's' : ''} without product_id (will be deleted)
+                  <div className="text-sm text-gray-300 mb-3 space-y-1">
+                    {linkStats.orphaned_links_null > 0 && (
+                      <div>• {linkStats.orphaned_links_null} link{linkStats.orphaned_links_null !== 1 ? 's' : ''} with NULL product_id</div>
+                    )}
+                    {linkStats.orphaned_links_deleted > 0 && (
+                      <div>• {linkStats.orphaned_links_deleted} link{linkStats.orphaned_links_deleted !== 1 ? 's' : ''} pointing to deleted products</div>
+                    )}
+                    <div className="text-xs text-gray-400 mt-2">These will be cleaned up when you click "FIX ORPHANED LINKS"</div>
                   </div>
                   <button
                     onClick={repairOrphanedLinks}
