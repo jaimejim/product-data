@@ -71,8 +71,8 @@ export default function Home() {
     // Fetch global products on mount and refresh periodically
     fetchGlobalProducts()
 
-    // Auto-refresh every 3 seconds for real-time updates
-    const interval = setInterval(fetchGlobalProducts, 3000)
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(fetchGlobalProducts, 10000)
     return () => clearInterval(interval)
   }, [state, fetchGlobalProducts])
 
@@ -267,7 +267,7 @@ export default function Home() {
                     <button
                       onClick={fetchGlobalProducts}
                       className={`text-xs text-gray-600 hover:text-gray-400 ${isRefreshingGlobal ? 'animate-spin' : ''}`}
-                      title="Refresh feed (auto-refreshes every 3s)"
+                      title="Refresh feed (auto-refreshes every 10s)"
                     >
                       ↻
                     </button>
