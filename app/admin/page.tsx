@@ -106,9 +106,22 @@ export default function AdminPage() {
     try {
       const response = await fetch('/api/debug/links')
       const data = await response.json()
-      setLinkStats(data.stats ? data : null)
+
+      if (data.stats) {
+        // Flatten the response structure to match LinkStats interface
+        setLinkStats({
+          total_products: data.stats.total_products,
+          products_with_links: data.stats.products_with_links,
+          products_without_links: data.stats.products_without_links,
+          recent_products: data.recent_products || [],
+          orphaned_links: data.orphaned_links || [],
+        })
+      } else {
+        setLinkStats(null)
+      }
     } catch (error) {
       console.error('Failed to load link stats:', error)
+      setLinkStats(null)
     }
   }
 
