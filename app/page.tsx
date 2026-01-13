@@ -33,7 +33,7 @@ export default function Home() {
   const [showHistory, setShowHistory] = useState(false)
   const [shareHash, setShareHash] = useState<string>('')
   const [globalProducts, setGlobalProducts] = useState<GlobalProduct[]>([])
-  const [showGlobal, setShowGlobal] = useState(false)
+  const [showGlobal, setShowGlobal] = useState(true)
   const [isRefreshingGlobal, setIsRefreshingGlobal] = useState(false)
 
   // Function to fetch global products
