@@ -27,9 +27,11 @@ interface DbTestResult {
 }
 
 interface LinkStats {
-  total_products: string
-  products_with_links: string
-  products_without_links: string
+  total_products: number
+  products_with_links: number
+  products_without_links: number
+  total_share_links: number
+  orphaned_links_count: number
   recent_products: any[]
   orphaned_links: any[]
 }
@@ -108,11 +110,8 @@ export default function AdminPage() {
       const data = await response.json()
 
       if (data.stats) {
-        // Flatten the response structure to match LinkStats interface
         setLinkStats({
-          total_products: data.stats.total_products,
-          products_with_links: data.stats.products_with_links,
-          products_without_links: data.stats.products_without_links,
+          ...data.stats,
           recent_products: data.recent_products || [],
           orphaned_links: data.orphaned_links || [],
         })
@@ -334,26 +333,41 @@ export default function AdminPage() {
 
           {linkStats && (
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+              {/* Key Metrics Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-gray-900 p-4 rounded">
                   <div className="text-2xl font-bold">{linkStats.total_products}</div>
                   <div className="text-sm text-gray-400">Total Products</div>
                 </div>
                 <div className="bg-gray-900 p-4 rounded">
                   <div className="text-2xl font-bold text-green-400">{linkStats.products_with_links}</div>
-                  <div className="text-sm text-gray-400">With Share Links</div>
+                  <div className="text-sm text-gray-400">Products With Links</div>
                 </div>
                 <div className="bg-gray-900 p-4 rounded">
                   <div className="text-2xl font-bold text-yellow-400">{linkStats.products_without_links}</div>
-                  <div className="text-sm text-gray-400">Without Links</div>
+                  <div className="text-sm text-gray-400">Products Without Links</div>
+                </div>
+                <div className="bg-gray-900 p-4 rounded">
+                  <div className="text-2xl font-bold text-blue-400">{linkStats.total_share_links}</div>
+                  <div className="text-sm text-gray-400">Total Share Links</div>
                 </div>
               </div>
 
-              {linkStats.products_without_links && parseInt(linkStats.products_without_links) > 0 && (
+              {/* Info Box */}
+              <div className="bg-blue-900/20 border border-blue-700 p-3 rounded text-xs">
+                <div className="font-bold mb-1 text-blue-400">ℹ️ What These Numbers Mean:</div>
+                <div className="text-gray-300 space-y-1">
+                  <div>• <span className="text-white">Products With Links:</span> Distinct products that appear in the global feed ({linkStats.products_with_links})</div>
+                  <div>• <span className="text-white">Total Share Links:</span> Total number of share URLs in database ({linkStats.total_share_links})</div>
+                  <div>• Some products may have multiple share links (duplicates are filtered in the global feed)</div>
+                </div>
+              </div>
+
+              {linkStats.products_without_links && linkStats.products_without_links > 0 && (
                 <div className="bg-blue-900/20 border border-blue-700 p-4 rounded">
                   <h3 className="font-bold mb-2 text-blue-400">ℹ️ Products Without Share Links</h3>
-                  <div className="text-xs text-gray-300 mb-3">
-                    {linkStats.products_without_links} products don't have share links yet
+                  <div className="text-sm text-gray-300 mb-3">
+                    {linkStats.products_without_links} product{linkStats.products_without_links !== 1 ? 's' : ''} need share links
                   </div>
                   <button
                     onClick={createMissingLinks}
@@ -404,11 +418,11 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {linkStats.orphaned_links && linkStats.orphaned_links.length > 0 && (
+              {linkStats.orphaned_links_count > 0 && (
                 <div className="bg-yellow-900/20 border border-yellow-700 p-4 rounded">
                   <h3 className="font-bold mb-2 text-yellow-400">⚠ Orphaned Share Links:</h3>
-                  <div className="text-xs text-gray-300 mb-3">
-                    {linkStats.orphaned_links.length} share links without product_id
+                  <div className="text-sm text-gray-300 mb-3">
+                    {linkStats.orphaned_links_count} share link{linkStats.orphaned_links_count !== 1 ? 's' : ''} without product_id (will be deleted)
                   </div>
                   <button
                     onClick={repairOrphanedLinks}
