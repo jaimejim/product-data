@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Camera from './components/Camera'
 import ResultCard from './components/ResultCard'
-import AsciiClouds from './components/AsciiClouds'
 import type { AnalysisResult } from '@/lib/types'
 import { getHistory, addToHistory, type HistoryItem } from '@/lib/history'
 import { saveSharedResult } from '@/lib/share'
@@ -195,9 +194,8 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-black font-mono text-white relative">
-      <AsciiClouds />
-      <div className="max-w-2xl mx-auto px-4 py-6 relative z-10">
+    <main className="min-h-screen bg-black font-mono text-white">
+      <div className="max-w-2xl mx-auto px-4 py-6">
 
         {state === 'idle' && (
           <div className="space-y-8">
