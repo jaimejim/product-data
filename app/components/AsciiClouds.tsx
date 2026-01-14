@@ -15,24 +15,24 @@ export default function AsciiClouds() {
       return
     }
 
-    // Configuration matching your green theme (using "default" preset for cleaner look)
+    // Configuration - Terminal preset for dense cloud effect
     const config = {
-      cellSize: 10,
-      waveAmplitude: 0.15,
-      waveSpeed: 0.5,
-      noiseIntensity: 0.0,
-      vignetteIntensity: 0.5,
+      cellSize: 12,
+      waveAmplitude: 0.2,
+      waveSpeed: 0.4,
+      noiseIntensity: 0.025,
+      vignetteIntensity: 0.65,
       vignetteRadius: 0.5,
-      brightnessAdjust: 0.0,
-      contrastAdjust: 1.0,
-      timeSpeed: 1.0,
+      brightnessAdjust: -0.15,
+      contrastAdjust: 1.5,
+      timeSpeed: 0.8,
       hue: 120, // Green
-      saturation: 0.5,
-      threshold1: 0.25,
-      threshold2: 0.3,
-      threshold3: 0.4,
-      threshold4: 0.5,
-      threshold5: 0.65,
+      saturation: 0.9,
+      threshold1: 0.08,  // Lower = more glyphs
+      threshold2: 0.18,
+      threshold3: 0.28,
+      threshold4: 0.38,
+      threshold5: 0.48,
       noiseSeed: Math.random().toString(36).substring(2, 8),
     }
 
