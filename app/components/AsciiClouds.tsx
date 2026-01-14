@@ -15,24 +15,24 @@ export default function AsciiClouds() {
       return
     }
 
-    // Configuration matching your green theme
+    // Configuration matching your green theme (using "default" preset for cleaner look)
     const config = {
-      cellSize: 12,
-      waveAmplitude: 0.2,
-      waveSpeed: 0.4,
-      noiseIntensity: 0.025,
-      vignetteIntensity: 0.65,
+      cellSize: 10,
+      waveAmplitude: 0.15,
+      waveSpeed: 0.5,
+      noiseIntensity: 0.0,
+      vignetteIntensity: 0.5,
       vignetteRadius: 0.5,
-      brightnessAdjust: -0.15,
-      contrastAdjust: 1.5,
-      timeSpeed: 0.8,
+      brightnessAdjust: 0.0,
+      contrastAdjust: 1.0,
+      timeSpeed: 1.0,
       hue: 120, // Green
-      saturation: 0.9,
-      threshold1: 0.08,
-      threshold2: 0.18,
-      threshold3: 0.28,
-      threshold4: 0.38,
-      threshold5: 0.48,
+      saturation: 0.5,
+      threshold1: 0.25,
+      threshold2: 0.3,
+      threshold3: 0.4,
+      threshold4: 0.5,
+      threshold5: 0.65,
       noiseSeed: Math.random().toString(36).substring(2, 8),
     }
 
@@ -292,7 +292,7 @@ export default function AsciiClouds() {
         float glyphValue = getGlyph(brightness, localUV);
 
         vec3 glyphColor = hsl2rgb(u_hue, u_saturation, 0.5 + brightness * 0.3);
-        vec3 bgColor = vec3(0.0, 0.0, 0.0);
+        vec3 bgColor = vec3(0.02, 0.02, 0.02);
 
         vec3 finalColor = mix(bgColor, glyphColor, glyphValue * brightness);
         fragColor = vec4(finalColor, 1.0);
