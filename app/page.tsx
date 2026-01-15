@@ -132,7 +132,7 @@ export default function Home() {
           setTimeout(() => {
             console.log('⏰ Triggering global feed refresh after scan...')
             fetchGlobalProducts()
-          }, 500)
+          }, 100)
         }
       } else if (data.status === 'poor_quality') {
         setError(data.message + '\n\n' + data.suggestion)
@@ -253,8 +253,55 @@ export default function Home() {
                 )}
               </div>
             )}
+          </div>
+        )}
 
-            {globalProducts.length > 0 && (
+        {state === 'analyzing' && (
+          <div className="py-16 text-center space-y-6">
+            <div className="text-2xl text-green-400 animate-pulse">
+              ANALYZING
+            </div>
+            <div className="flex gap-1 justify-center">
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 bg-green-600 animate-pulse"
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </div>
+            <div className="text-xs text-gray-600">
+              {elapsed}s
+            </div>
+          </div>
+        )}
+
+        {state === 'success' && result && (result.status === 'success' || result.status === 'cached') && (
+          <ResultCard
+            result={result.data}
+            isCached={result.status === 'cached'}
+            onReset={handleReset}
+            shareHash={shareHash}
+          />
+        )}
+
+        {state === 'error' && (
+          <div className="py-16 space-y-6">
+            <div className="border border-red-900 bg-red-950/30 p-6">
+              <div className="text-red-400 mb-4">ERROR</div>
+              <p className="text-red-300 text-sm mb-6 whitespace-pre-line">{error}</p>
+              <button
+                onClick={handleReset}
+                className="w-full py-3 border border-red-700 text-red-400 hover:bg-red-950"
+              >
+                RETRY
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Global feed - always visible */}
+        {globalProducts.length > 0 && (
               <div className="border-t border-gray-900 pt-8">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2">
