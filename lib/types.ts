@@ -9,7 +9,7 @@ export interface Ingredient {
 }
 
 export interface Concern {
-  type: 'allergen' | 'carcinogen' | 'irritant' | 'hormone_disruptor' | 'additive' | 'other'
+  type: 'dietary_concern' | 'allergen' | 'carcinogen' | 'irritant' | 'hormone_disruptor' | 'additive' | 'other'
   severity: 'low' | 'moderate' | 'high'
   description: string
   ingredient?: string  // Which ingredient caused this concern

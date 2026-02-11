@@ -90,53 +90,103 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
 
       {/* Detailed Scores */}
       <div className="border border-gray-800 bg-gray-950 p-6">
-        <h3 className="text-sm font-semibold text-gray-400 mb-4">DETAILED SCORES</h3>
+        <h3 className="text-sm font-semibold text-gray-400 mb-4">DETAILED ANALYSIS</h3>
         <div className="space-y-3">
           <ScoreDisplay
             score={result.health_score}
-            label="Health Impact"
-            subtitle="Nutritional value and beneficial ingredients"
+            label="Nutritional Value"
+            subtitle="Vitamins, minerals, beneficial compounds"
           />
           <ScoreDisplay
             score={result.toxicity_score}
-            label="Toxicity Level"
-            subtitle="Harmful chemicals and safety concerns"
+            label="Additives & Chemicals"
+            subtitle="Preservatives, artificial ingredients, harmful substances"
+            inverse={true}
           />
         </div>
       </div>
 
-      {/* Concerns */}
-      {result.concerns && result.concerns.length > 0 && (
+      {/* Allergens */}
+      {result.concerns && result.concerns.filter(c => c.type === 'allergen').length > 0 && (
+        <div className="border border-gray-800 bg-gray-950 p-6">
+          <h3 className="text-sm font-semibold text-gray-400 mb-3">
+            ALLERGENS ({result.concerns.filter(c => c.type === 'allergen').length})
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {result.concerns
+              .filter(c => c.type === 'allergen')
+              .map((concern, index) => (
+                <div
+                  key={index}
+                  className="px-3 py-1 border border-gray-700 text-gray-300 text-xs"
+                >
+                  {concern.ingredient || concern.description}
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dietary Concerns */}
+      {result.concerns && result.concerns.filter(c => c.type === 'dietary_concern').length > 0 && (
         <div className="border border-gray-800 bg-gray-950 p-6">
           <h3 className="text-sm font-semibold text-gray-400 mb-4">
-            CONCERNS ({result.concerns.length})
+            DIETARY CONSIDERATIONS ({result.concerns.filter(c => c.type === 'dietary_concern').length})
           </h3>
           <div className="space-y-3">
-            {result.concerns.map((concern, index) => (
-              <div
-                key={index}
-                className="border-l-2 border-red-900 pl-4 py-2"
-              >
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="font-semibold text-white text-sm">
-                    {concern.ingredient || 'General'}
-                  </span>
-                  <span
-                    className={`text-xs px-2 py-1 border ${
-                      concern.severity === 'high' ? 'border-red-700 text-red-400' :
-                      concern.severity === 'moderate' ? 'border-yellow-700 text-yellow-400' :
-                      'border-gray-700 text-gray-400'
-                    }`}
-                  >
-                    {concern.severity}
-                  </span>
+            {result.concerns
+              .filter(c => c.type === 'dietary_concern')
+              .map((concern, index) => (
+                <div key={index} className="border-l border-gray-800 pl-4 py-1">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="text-white text-sm">
+                      {concern.ingredient || 'General'}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 border border-gray-800 text-gray-500 uppercase">
+                      {concern.severity}
+                    </span>
+                  </div>
+                  <p className="text-gray-400 text-xs">{concern.description}</p>
                 </div>
-                <p className="text-gray-300 text-xs">{concern.description}</p>
-                <p className="text-gray-600 text-xs mt-1 capitalize">
-                  {concern.type.replace('_', ' ')}
-                </p>
-              </div>
-            ))}
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Safety Concerns (harmful additives, carcinogens, etc.) */}
+      {result.concerns && result.concerns.filter(c => c.type !== 'allergen' && c.type !== 'dietary_concern').length > 0 && (
+        <div className="border border-gray-800 bg-gray-950 p-6">
+          <h3 className="text-sm font-semibold text-gray-400 mb-4">
+            SAFETY CONCERNS ({result.concerns.filter(c => c.type !== 'allergen' && c.type !== 'dietary_concern').length})
+          </h3>
+          <div className="space-y-3">
+            {result.concerns
+              .filter(c => c.type !== 'allergen' && c.type !== 'dietary_concern')
+              .map((concern, index) => (
+                <div
+                  key={index}
+                  className="border-l-2 border-gray-700 pl-4 py-2"
+                >
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <span className="font-semibold text-white text-sm">
+                      {concern.ingredient || 'General'}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-1 border ${
+                        concern.severity === 'high' ? 'border-gray-600 text-gray-300' :
+                        concern.severity === 'moderate' ? 'border-gray-700 text-gray-400' :
+                        'border-gray-800 text-gray-500'
+                      }`}
+                    >
+                      {concern.severity}
+                    </span>
+                  </div>
+                  <p className="text-gray-300 text-xs">{concern.description}</p>
+                  <p className="text-gray-600 text-xs mt-1 capitalize">
+                    {concern.type.replace('_', ' ')}
+                  </p>
+                </div>
+              ))}
           </div>
         </div>
       )}
