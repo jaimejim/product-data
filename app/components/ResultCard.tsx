@@ -108,8 +108,8 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
 
       {/* Allergens */}
       {result.concerns && result.concerns.filter(c => c.type === 'allergen').length > 0 && (
-        <div className="border border-gray-800 bg-gray-950 p-6">
-          <h3 className="text-sm font-semibold text-gray-400 mb-3">
+        <div className="border border-blue-900/40 bg-blue-950/10 p-6">
+          <h3 className="text-sm font-semibold text-blue-400 mb-3">
             ALLERGENS ({result.concerns.filter(c => c.type === 'allergen').length})
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -118,7 +118,7 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
               .map((concern, index) => (
                 <div
                   key={index}
-                  className="px-3 py-1 border border-gray-700 text-gray-300 text-xs"
+                  className="px-3 py-1.5 border border-blue-800 bg-blue-950/30 text-blue-300 text-xs"
                 >
                   {concern.ingredient || concern.description}
                 </div>
@@ -137,12 +137,16 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
             {result.concerns
               .filter(c => c.type === 'dietary_concern')
               .map((concern, index) => (
-                <div key={index} className="border-l border-gray-800 pl-4 py-1">
+                <div key={index} className="border-l border-amber-900/50 pl-4 py-1">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="text-white text-sm">
                       {concern.ingredient || 'General'}
                     </span>
-                    <span className="text-xs px-2 py-0.5 border border-gray-800 text-gray-500 uppercase">
+                    <span className={`text-xs px-2 py-0.5 border uppercase ${
+                      concern.severity === 'high' ? 'border-amber-700 text-amber-400 bg-amber-950/30' :
+                      concern.severity === 'moderate' ? 'border-amber-800 text-amber-500 bg-amber-950/20' :
+                      'border-amber-900 text-amber-600 bg-amber-950/10'
+                    }`}>
                       {concern.severity}
                     </span>
                   </div>
@@ -155,8 +159,8 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
 
       {/* Safety Concerns (harmful additives, carcinogens, etc.) */}
       {result.concerns && result.concerns.filter(c => c.type !== 'allergen' && c.type !== 'dietary_concern').length > 0 && (
-        <div className="border border-gray-800 bg-gray-950 p-6">
-          <h3 className="text-sm font-semibold text-gray-400 mb-4">
+        <div className="border border-red-900/50 bg-red-950/10 p-6">
+          <h3 className="text-sm font-semibold text-red-400 mb-4">
             SAFETY CONCERNS ({result.concerns.filter(c => c.type !== 'allergen' && c.type !== 'dietary_concern').length})
           </h3>
           <div className="space-y-3">
@@ -165,24 +169,24 @@ export default function ResultCard({ result, isCached, onReset, shareHash }: Res
               .map((concern, index) => (
                 <div
                   key={index}
-                  className="border-l-2 border-gray-700 pl-4 py-2"
+                  className="border-l-2 border-red-800 pl-4 py-2"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-semibold text-white text-sm">
                       {concern.ingredient || 'General'}
                     </span>
                     <span
-                      className={`text-xs px-2 py-1 border ${
-                        concern.severity === 'high' ? 'border-gray-600 text-gray-300' :
-                        concern.severity === 'moderate' ? 'border-gray-700 text-gray-400' :
-                        'border-gray-800 text-gray-500'
+                      className={`text-xs px-2 py-1 border uppercase ${
+                        concern.severity === 'high' ? 'border-red-700 text-red-300 bg-red-950/50' :
+                        concern.severity === 'moderate' ? 'border-red-800 text-red-400 bg-red-950/30' :
+                        'border-red-900 text-red-500 bg-red-950/20'
                       }`}
                     >
                       {concern.severity}
                     </span>
                   </div>
                   <p className="text-gray-300 text-xs">{concern.description}</p>
-                  <p className="text-gray-600 text-xs mt-1 capitalize">
+                  <p className="text-red-600 text-xs mt-1 capitalize font-medium">
                     {concern.type.replace('_', ' ')}
                   </p>
                 </div>
